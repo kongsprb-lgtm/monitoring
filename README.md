@@ -1,62 +1,34 @@
-# 🥚 Steal An Egg - Joki Account Monitoring
+# 🥚 Steal An Egg - Webhook Tracker (WindUI Edition)
 
-Script tracker dan monitoring perkembangan akun Roblox game **Steal An Egg** secara otomatis via **Discord Webhook** atau **Web Dashboard**.
+Script monitoring & webhook tracker otomatis untuk game **Steal An Egg** di Roblox dengan tampilan UI **WindUI** (persis seperti SysHub).
 
 ---
 
-## ⚡ Cara Cepat: Monitor via Discord Webhook
+## ⚡ Cara Menjalankan (Loadstring)
 
-Kamu bisa langsung menjalankan script ini di emulator / executor (Delta, Fluxus, Codex, Arceus X, Synapse, dll).
-
-### 1. Buat Webhook di Discord
-1. Masuk ke server Discord kamu > Pilih channel monitoring > Klik ikon **Settings (Gerigi)**.
-2. Pilih menu **Integrations** > **Webhooks** > **New Webhook**.
-3. Copy URL Webhook tersebut.
-
-### 2. Jalankan di Executor (Loadstring)
-Copy dan jalankan kode ini di executor kamu:
+Cukup copy 1 baris ini dan jalankan di executor kamu (Delta, Fluxus, Codex, Arceus X, dll):
 
 ```lua
--- Konfigurasi
-getgenv().WebhookUrl = "GANTI_DENGAN_WEBHOOK_DISCORD_KAMU"
-getgenv().Interval = 300 -- Kirim update tiap 5 menit (300 detik)
-
--- Loadstring
 loadstring(game:HttpGet("https://raw.githubusercontent.com/kongsprb-lgtm/monitoring/main/steal_an_egg.lua"))()
 ```
 
-> **Catatan:** Jangan bagikan link Webhook Discord kamu ke publik. Dengan format di atas, script inti tetap aman di GitHub dan kamu hanya perlu memasukkan webhook di executor masing-masing akun joki.
+> ⚠️ **PENTING:** Pastikan repository GitHub `kongsprb-lgtm/monitoring` kamu sudah di-set ke **PUBLIC** di GitHub Settings agar executor bisa membaca file raw-nya.
 
 ---
 
-## 🌐 Cara Alternatif: Monitor via Web Dashboard Sendiri
+## 🖥️ Fitur UI & Pengaturan
 
-Jika kamu mengelola banyak akun dan ingin tampilan web portal live:
+Setelah script di-execute, jendela UI **WindUI** akan otomatis muncul di layar game:
 
-### 1. Jalankan Server Web (Lokal / VPS)
-Masuk ke folder `web`:
-```bash
-cd web
-npm install
-npm start
-```
-Buka browser di `http://localhost:3000`.
-
-### 2. Jalankan Script di Executor
-```lua
--- Kirim data ke Web Dashboard
-getgenv().ServerUrl = "http://IP_SERVER_ATAU_DOMAIN:3000/api/update"
-getgenv().Interval = 60 -- update tiap 1 menit
-
-loadstring(game:HttpGet("https://raw.githubusercontent.com/kongsprb-lgtm/monitoring/main/steal_an_egg.lua"))()
-```
-
----
-
-## 🛠️ Fitur Script
-
-- ✅ **One-Line Loadstring**: Cukup 1 baris untuk eksekusi lewat GitHub raw.
-- ✅ **Auto-Detect Stats**: Otomatis mendeteksi Level, Uang (Cash), Kecepatan/Sepatu (Speed), dan Leaderstats.
-- ✅ **Built-in Anti-AFK**: Otomatis mencegah akun ter-kick dari Roblox setelah 20 menit idle.
-- ✅ **Uptime & Ping Tracker**: Mengetahui berapa lama joki sudah berjalan dan kestabilan koneksi server.
-- ✅ **Multi-Account Friendly**: Bisa dijalankan di banyak emulator/tab sekaligus tanpa bentrok.
+1. **Webhook URL**: Tempelkan URL webhook Discord kamu di kolom ini.
+2. **Discord User ID**: Masukkan User ID Discord kamu jika ingin di-mention/ping saat ada drop langka.
+3. **Filter Rarity**: Pilih rarity mana saja yang ingin dilaporkan ke Discord (Multi-select).
+4. **Toggles**:
+   - `Webhook On Egg Spawn (Grouped)`: Memberikan info batch saat telur muncul di field.
+   - `Webhook On Steal (To Backpack)`: Mengirim laporan saat berhasil mencuri telur ke backpack.
+   - `Webhook On Hatch (Pet Result)`: Mengirim laporan saat telur berhasil di-hatch jadi pet.
+5. **Test Buttons**:
+   - `Test Spawn Batch Format` (Hijau)
+   - `Test Hatch Format` (Biru)
+6. **Auto Save Config**: Pengaturan dan URL Webhook kamu otomatis tersimpan di storage executor, jadi tidak perlu diketik ulang saat rejoin!
+7. **Built-in Anti-AFK**: Mencegah akun ter-kick dari Roblox saat ditinggal AFK farming.
