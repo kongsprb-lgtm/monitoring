@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steal An Egg - Joki Monitoring Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+        body {
+            background-color: #0b0f19;
+            color: #f1f5f9;
+            padding: 24px;
+            min-height: 100vh;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #1e293b;
+            margin-bottom: 24px;
+        }
+        .header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #38bdf8;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .live-badge {
+            background: #064e3b;
+            color: #34d399;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background: #131b2e;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 18px;
+            transition: transform 0.2s, border-color 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            border-color: #38bdf8;
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: #1e293b;
+            border: 2px solid #38bdf8;
+        }
+        .user-info h2 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #fff;
+        }
+        .user-info p {
+            font-size: 12px;
+            color: #64748b;
+        }
+        .status-pill {
+            margin-left: auto;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 8px;
+        }
+        .online {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid #059669;
+        }
+        .offline {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid #dc2626;
+        }
+        .stat-box {
+            background: #0b0f19;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+        }
+        .stat-label {
+            color: #94a3b8;
+        }
+        .stat-value {
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+        .footer-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #64748b;
+            border-top: 1px solid #1e293b;
+            padding-top: 10px;
+        }
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🥚 Steal An Egg - Joki Monitor</h1>
+        <div class="live-badge">
+            <span class="pulse-dot"></span>
+            LIVE MONITOR
+        </div>
+    </div>
+
+    <div class="grid" id="accountsGrid">
+        <div class="empty-state">
+            <p>Menunggu data akun dari script executor...</p>
+        </div>
+    </div>
+
+    <script>
+        async function loadAccounts() {
+            try {
+                const res = await fetch('/api/accounts');
+                const accounts = await res.json();
+                const grid = document.getElementById('accountsGrid');
+
+                if (accounts.length === 0) {
+                    grid.innerHTML = '<div class="empty-state"><p>Belum ada akun yang terhubung.<br>Jalankan loadstring di executor untuk mulai memantau.</p></div>';
+                    return;
+                }
+
+                grid.innerHTML = accounts.map(acc => {
+                    const avatarUrl = `https://www.roblox.com/headshot-thumbnail/image?userId=${acc.userId}&width=150&height=150&format=png`;
+                    const statusClass = acc.isOnline ? 'online' : 'offline';
+                    const statusText = acc.isOnline ? 'ONLINE' : 'OFFLINE';
+
+                    let statsHtml = '';
+                    if (acc.stats && acc.stats.length > 0) {
+                        statsHtml = acc.stats.map(s => `
+                            <div class="stat-row">
+                                <span class="stat-label">${s.name}</span>
+                                <span class="stat-value">${s.value}</span>
+                            </div>
+                        `).join('');
+                    } else {
+                        statsHtml = '<div class="stat-row"><span class="stat-label">Stats</span><span class="stat-value">-</span></div>';
+                    }
+
+                    return `
+                        <div class="card">
+                            <div class="card-header">
+                                <img src="${avatarUrl}" class="avatar" alt="Avatar" onerror="this.src='https://tr.rbxcdn.com/53eb9b17fe1432a809c73a13889b5006/150/150/AvatarHeadshot/Png'">
+                                <div class="user-info">
+                                    <h2>${acc.displayName}</h2>
+                                    <p>@${acc.username}</p>
+                                </div>
+                                <span class="status-pill ${statusClass}">${statusText}</span>
+                            </div>
+
+                            <div class="stat-box">
+                                ${statsHtml}
+                            </div>
+
+                            <div class="footer-info">
+                                <span>⏳ Uptime: ${acc.uptime}</span>
+                                <span>📶 Ping: ${acc.ping}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error("Gagal memuat data:", err);
+            }
+        }
+
+        // Muat pertama kali dan perbarui setiap 5 detik
+        loadAccounts();
+        setInterval(loadAccounts, 5000);
+    </script>
+</body>
+</html>

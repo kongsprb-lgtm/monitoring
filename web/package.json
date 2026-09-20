@@ -1,0 +1,12 @@
+{
+  "name": "steal-an-egg-monitoring",
+  "version": "1.0.0",
+  "description": "Web dashboard to monitor Roblox Steal An Egg accounts",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
