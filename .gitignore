@@ -1,3 +1,5 @@
 node_modules/
 .env
 .DS_Store
+steal_an_egg_source.lua
+steal_an_egg_protected.lua
