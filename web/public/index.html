@@ -3,227 +3,960 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Steal An Egg - Joki Monitoring Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>P4kong x SysHub - Steal An Egg Joki Monitor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-main: #07090e;
+            --bg-card: #0f1422;
+            --bg-card-hover: #141c2e;
+            --bg-chip: #182238;
+            --border-color: #1e293b;
+            --border-focus: #38bdf8;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #38bdf8;
+            --primary-glow: rgba(56, 189, 248, 0.2);
+            --accent-green: #10b981;
+            --accent-green-bg: rgba(16, 185, 129, 0.15);
+            --accent-gold: #f59e0b;
+            --accent-purple: #a855f7;
+            --accent-red: #ef4444;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
+
         body {
-            background-color: #0b0f19;
-            color: #f1f5f9;
-            padding: 24px;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* MONOSPACE CODE FONT */
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ================= PIN SCREEN ================= */
+        #pinScreen {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at center, #111a2e 0%, #07090e 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+
+        .pin-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 30px var(--primary-glow);
+            border-radius: 20px;
+            padding: 36px 28px;
+            width: 100%;
+            max-width: 380px;
+            text-align: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .pin-logo {
+            font-size: 42px;
+            margin-bottom: 12px;
+            display: inline-block;
+            filter: drop-shadow(0 0 15px rgba(56, 189, 248, 0.5));
+        }
+
+        .pin-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 6px;
+        }
+
+        .pin-subtitle {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        .pin-input {
+            width: 100%;
+            background: #090d16;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 22px;
+            text-align: center;
+            letter-spacing: 8px;
+            color: var(--primary);
+            font-weight: 700;
+            outline: none;
+            transition: all 0.2s;
+            margin-bottom: 16px;
+        }
+
+        .pin-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        .pin-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+            color: #07090e;
+            font-weight: 700;
+            font-size: 15px;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pin-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
+        }
+
+        .pin-error {
+            color: var(--accent-red);
+            font-size: 13px;
+            margin-top: 12px;
+            display: none;
+            font-weight: 600;
+        }
+
+        /* ================= MAIN DASHBOARD ================= */
+        #dashboardScreen {
+            display: none;
+            flex-direction: column;
             min-height: 100vh;
         }
-        .header {
+
+        .navbar {
+            background: rgba(15, 20, 34, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 14px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #1e293b;
-            margin-bottom: 24px;
         }
-        .header h1 {
-            font-size: 22px;
-            font-weight: 700;
-            color: #38bdf8;
+
+        .nav-brand {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
-        .live-badge {
-            background: #064e3b;
+
+        .brand-icon {
+            font-size: 26px;
+        }
+
+        .brand-text h1 {
+            font-size: 17px;
+            font-weight: 800;
+            background: linear-gradient(90deg, #fff, #38bdf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-text p {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .badge-live {
+            background: var(--accent-green-bg);
+            border: 1px solid rgba(16, 185, 129, 0.4);
             color: #34d399;
-            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 6px 12px;
             border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 10px #10b981;
+            animation: pulseAnim 1.5s infinite;
+        }
+
+        @keyframes pulseAnim {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(1.3); }
+        }
+
+        .btn-lock {
+            background: #182238;
+            color: #94a3b8;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 8px 14px;
             font-size: 12px;
             font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
             display: flex;
             align-items: center;
             gap: 6px;
         }
-        .pulse-dot {
-            width: 8px;
-            height: 8px;
-            background: #10b981;
-            border-radius: 50%;
-            animation: pulse 1.5s infinite;
+
+        .btn-lock:hover {
+            color: #fff;
+            border-color: #475569;
         }
-        @keyframes pulse {
-            0% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.4; transform: scale(1.2); }
-            100% { opacity: 1; transform: scale(1); }
+
+        /* CONTAINER & NAV TABS */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+            width: 100%;
+            flex: 1;
         }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 20px;
+
+        .tab-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+            overflow-x: auto;
         }
-        .card {
-            background: #131b2e;
-            border: 1px solid #1e293b;
-            border-radius: 12px;
-            padding: 18px;
-            transition: transform 0.2s, border-color 0.2s;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-        .card:hover {
-            transform: translateY(-2px);
-            border-color: #38bdf8;
-        }
-        .card-header {
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 600;
+            padding: 10px 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 14px;
+            gap: 8px;
+            white-space: nowrap;
         }
-        .avatar {
-            width: 52px;
-            height: 52px;
-            border-radius: 50%;
-            background: #1e293b;
-            border: 2px solid #38bdf8;
-        }
-        .user-info h2 {
-            font-size: 16px;
-            font-weight: 600;
+
+        .tab-btn:hover {
             color: #fff;
+            background: rgba(255, 255, 255, 0.04);
         }
-        .user-info p {
-            font-size: 12px;
-            color: #64748b;
+
+        .tab-btn.active {
+            color: #07090e;
+            background: var(--primary);
+            font-weight: 700;
+            box-shadow: 0 4px 14px var(--primary-glow);
         }
-        .status-pill {
-            margin-left: auto;
-            font-size: 11px;
-            font-weight: 600;
-            padding: 4px 8px;
-            border-radius: 8px;
+
+        /* GRID AKUN */
+        .accounts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 22px;
         }
-        .online {
-            background: rgba(16, 185, 129, 0.15);
-            color: #34d399;
-            border: 1px solid #059669;
+
+        @media (max-width: 480px) {
+            .accounts-grid {
+                grid-template-columns: 1fr;
+            }
+            .container {
+                padding: 14px;
+            }
         }
-        .offline {
-            background: rgba(239, 68, 68, 0.15);
-            color: #f87171;
-            border: 1px solid #dc2626;
-        }
-        .stat-box {
-            background: #0b0f19;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 12px;
+
+        /* KARTU AKUN */
+        .account-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 16px;
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
         }
-        .stat-row {
+
+        .account-card:hover {
+            border-color: rgba(56, 189, 248, 0.5);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.1);
+        }
+
+        /* CARD HEADER */
+        .card-top {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .avatar-wrap {
+            position: relative;
+        }
+
+        .player-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background: #182238;
+            border: 2px solid var(--primary);
+            object-fit: cover;
+        }
+
+        .online-dot {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid var(--bg-card);
+            background: #10b981;
+        }
+
+        .offline-dot {
+            background: #ef4444;
+        }
+
+        .player-info h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .player-info p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .badge-status {
+            margin-left: auto;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 5px 10px;
+            border-radius: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-online {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            border: 1px solid #10b981;
+        }
+
+        .status-offline {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid #ef4444;
+        }
+
+        /* MAIN STAT TILES (MONEY & TREADMILL SPEED) */
+        .stats-hero {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .hero-tile {
+            background: #090d16;
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .hero-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .hero-value {
+            font-size: 20px;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .val-money {
+            color: #34d399;
+            text-shadow: 0 0 12px rgba(52, 211, 153, 0.3);
+        }
+
+        .val-speed {
+            color: #38bdf8;
+            text-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+        }
+
+        /* INVENTORY SECTIONS */
+        .inv-section {
+            background: #090d16;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .inv-header {
             display: flex;
             justify-content: space-between;
+            align-items: center;
+        }
+
+        .inv-title {
             font-size: 13px;
+            font-weight: 700;
+            color: #cbd5e1;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
-        .stat-label {
-            color: #94a3b8;
+
+        .inv-count-badge {
+            background: #182238;
+            color: var(--primary);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
         }
-        .stat-value {
+
+        .items-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            max-height: 115px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .items-chips::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .items-chips::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+
+        .item-chip {
+            background: var(--bg-chip);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 8px;
+            padding: 4px 8px;
+            font-size: 11px;
             font-weight: 600;
             color: #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
-        .footer-info {
+
+        .chip-qty {
+            color: var(--accent-gold);
+            font-weight: 700;
+        }
+
+        .chip-empty {
+            color: var(--text-muted);
+            font-size: 12px;
+            font-style: italic;
+        }
+
+        /* CARD FOOTER */
+        .card-bottom {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             font-size: 11px;
-            color: #64748b;
-            border-top: 1px solid #1e293b;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-color);
             padding-top: 10px;
         }
-        .empty-state {
+
+        /* ================= LIVE STEAL FEED ================= */
+        .steal-view {
+            display: none;
+        }
+
+        .steal-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .steal-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.2s;
+            animation: slideDown 0.3s ease;
+        }
+
+        .steal-card:hover {
+            border-color: rgba(56, 189, 248, 0.4);
+            transform: translateX(4px);
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .steal-icon {
+            font-size: 32px;
+        }
+
+        .steal-details {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .steal-title-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .steal-egg-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .rarity-pill {
+            font-size: 10px;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .steal-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .steal-time {
+            margin-left: auto;
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        /* RARITY COLORS */
+        .rarity-Common { background: rgba(148, 163, 184, 0.2); color: #94a3b8; border: 1px solid #64748b; }
+        .rarity-Uncommon { background: rgba(52, 211, 153, 0.2); color: #34d399; border: 1px solid #10b981; }
+        .rarity-Rare { background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid #0284c7; }
+        .rarity-Epic { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid #9333ea; }
+        .rarity-Legendary { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #d97706; }
+        .rarity-Mythic { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #dc2626; }
+        .rarity-Secret { background: rgba(6, 182, 212, 0.2); color: #22d3ee; border: 1px solid #0891b2; box-shadow: 0 0 10px rgba(6, 182, 212, 0.3); }
+        .rarity-Divine { background: rgba(250, 204, 21, 0.25); color: #fde047; border: 1px solid #eab308; box-shadow: 0 0 12px rgba(250, 204, 21, 0.4); }
+
+        /* EMPTY STATE */
+        .empty-box {
             grid-column: 1 / -1;
             text-align: center;
-            padding: 60px 20px;
-            color: #64748b;
+            padding: 80px 20px;
+            color: var(--text-muted);
+            background: var(--bg-card);
+            border: 1px dashed var(--border-color);
+            border-radius: 18px;
+        }
+
+        .empty-box h3 {
+            font-size: 18px;
+            color: #fff;
+            margin-bottom: 8px;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>🥚 Steal An Egg - Joki Monitor</h1>
-        <div class="live-badge">
-            <span class="pulse-dot"></span>
-            LIVE MONITOR
+
+    <!-- ================= 1. PIN LOCK SCREEN ================= -->
+    <div id="pinScreen">
+        <div class="pin-box">
+            <span class="pin-logo">🥚</span>
+            <h2 class="pin-title">P4kong x SysHub</h2>
+            <p class="pin-subtitle">Masukkan PIN Keamanan untuk Membuka Dashboard Joki</p>
+            
+            <form id="pinForm" onsubmit="handlePinSubmit(event)">
+                <input type="password" id="pinInput" class="pin-input mono" maxlength="6" placeholder="PIN" autofocus autocomplete="off" inputmode="numeric">
+                <button type="submit" class="pin-btn">Buka Dashboard</button>
+                <p id="pinError" class="pin-error">PIN Salah! Silakan coba lagi.</p>
+            </form>
         </div>
     </div>
 
-    <div class="grid" id="accountsGrid">
-        <div class="empty-state">
-            <p>Menunggu data akun dari script executor...</p>
-        </div>
+    <!-- ================= 2. DASHBOARD SCREEN ================= -->
+    <div id="dashboardScreen">
+        <!-- TOP NAVBAR -->
+        <header class="navbar">
+            <div class="nav-brand">
+                <span class="brand-icon">🥚</span>
+                <div class="brand-text">
+                    <h1>P4kong x SysHub</h1>
+                    <p>Steal An Egg • Joki Monitoring</p>
+                </div>
+            </div>
+
+            <div class="nav-actions">
+                <div class="badge-live">
+                    <span class="pulse"></span>
+                    <span id="accountCountBadge">0 Akun</span>
+                </div>
+                <button class="btn-lock" onclick="lockDashboard()">
+                    🔒 Kunci
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT CONTAINER -->
+        <main class="container">
+            <!-- TABS -->
+            <div class="tab-bar">
+                <button class="tab-btn active" id="tabAccountsBtn" onclick="switchView('accounts')">
+                    📊 Daftar Akun Terhubung (<span id="tabCount">0</span>)
+                </button>
+                <button class="tab-btn" id="tabStealBtn" onclick="switchView('steal')">
+                    🕵️ Log Telur Dicuri (<span id="tabStealCount">0</span>)
+                </button>
+            </div>
+
+            <!-- VIEW 1: ACCOUNTS GRID -->
+            <div id="viewAccounts" class="accounts-grid">
+                <div class="empty-box">
+                    <h3>Memuat data monitoring...</h3>
+                    <p>Menghubungkan ke server monitoring joki...</p>
+                </div>
+            </div>
+
+            <!-- VIEW 2: STEAL LOG FEED -->
+            <div id="viewSteal" class="steal-view">
+                <div class="steal-grid" id="stealGrid">
+                    <div class="empty-box">
+                        <h3>Belum Ada Telur Dicuri</h3>
+                        <p>Notifikasi realtime akan muncul saat akun mencuri telur di game.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 
+    <!-- SCRIPT LOGIC -->
     <script>
-        async function loadAccounts() {
+        const PIN_KEY = "p4kong_joki_pin";
+        let activeView = 'accounts';
+
+        // Cek login PIN saat halaman pertama dimuat
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedPin = localStorage.getItem(PIN_KEY);
+            if (savedPin) {
+                verifyPinWithServer(savedPin, false);
+            }
+        });
+
+        async function handlePinSubmit(e) {
+            e.preventDefault();
+            const pin = document.getElementById('pinInput').value.trim();
+            verifyPinWithServer(pin, true);
+        }
+
+        async function verifyPinWithServer(pin, showError) {
+            const errEl = document.getElementById('pinError');
             try {
-                const res = await fetch('/api/accounts');
-                const accounts = await res.json();
-                const grid = document.getElementById('accountsGrid');
+                const res = await fetch('/api/verify-pin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pin })
+                });
 
-                if (accounts.length === 0) {
-                    grid.innerHTML = '<div class="empty-state"><p>Belum ada akun yang terhubung.<br>Jalankan loadstring di executor untuk mulai memantau.</p></div>';
-                    return;
+                const data = await res.json();
+                if (data.success) {
+                    localStorage.setItem(PIN_KEY, pin);
+                    document.getElementById('pinScreen').style.display = 'none';
+                    document.getElementById('dashboardScreen').style.display = 'flex';
+                    errEl.style.display = 'none';
+                    startDataPolling();
+                } else {
+                    if (showError) errEl.style.display = 'block';
+                    localStorage.removeItem(PIN_KEY);
                 }
-
-                grid.innerHTML = accounts.map(acc => {
-                    const avatarUrl = `https://www.roblox.com/headshot-thumbnail/image?userId=${acc.userId}&width=150&height=150&format=png`;
-                    const statusClass = acc.isOnline ? 'online' : 'offline';
-                    const statusText = acc.isOnline ? 'ONLINE' : 'OFFLINE';
-
-                    let statsHtml = '';
-                    if (acc.stats && acc.stats.length > 0) {
-                        statsHtml = acc.stats.map(s => `
-                            <div class="stat-row">
-                                <span class="stat-label">${s.name}</span>
-                                <span class="stat-value">${s.value}</span>
-                            </div>
-                        `).join('');
-                    } else {
-                        statsHtml = '<div class="stat-row"><span class="stat-label">Stats</span><span class="stat-value">-</span></div>';
-                    }
-
-                    return `
-                        <div class="card">
-                            <div class="card-header">
-                                <img src="${avatarUrl}" class="avatar" alt="Avatar" onerror="this.src='https://tr.rbxcdn.com/53eb9b17fe1432a809c73a13889b5006/150/150/AvatarHeadshot/Png'">
-                                <div class="user-info">
-                                    <h2>${acc.displayName}</h2>
-                                    <p>@${acc.username}</p>
-                                </div>
-                                <span class="status-pill ${statusClass}">${statusText}</span>
-                            </div>
-
-                            <div class="stat-box">
-                                ${statsHtml}
-                            </div>
-
-                            <div class="footer-info">
-                                <span>⏳ Uptime: ${acc.uptime}</span>
-                                <span>📶 Ping: ${acc.ping}</span>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
             } catch (err) {
-                console.error("Gagal memuat data:", err);
+                console.error("Gagal verifikasi PIN:", err);
+                if (showError) errEl.style.display = 'block';
             }
         }
 
-        // Muat pertama kali dan perbarui setiap 5 detik
-        loadAccounts();
-        setInterval(loadAccounts, 5000);
+        function lockDashboard() {
+            localStorage.removeItem(PIN_KEY);
+            document.getElementById('pinInput').value = '';
+            document.getElementById('pinScreen').style.display = 'flex';
+            document.getElementById('dashboardScreen').style.display = 'none';
+        }
+
+        function switchView(viewName) {
+            activeView = viewName;
+            const tabAcc = document.getElementById('tabAccountsBtn');
+            const tabStl = document.getElementById('tabStealBtn');
+            const viewAcc = document.getElementById('viewAccounts');
+            const viewStl = document.getElementById('viewSteal');
+
+            if (viewName === 'accounts') {
+                tabAcc.classList.add('active');
+                tabStl.classList.remove('active');
+                viewAcc.style.display = 'grid';
+                viewStl.style.display = 'none';
+            } else {
+                tabAcc.classList.remove('active');
+                tabStl.classList.add('active');
+                viewAcc.style.display = 'none';
+                viewStl.style.display = 'block';
+            }
+        }
+
+        // ================= DATA FETCHING =================
+        async function fetchAccounts() {
+            try {
+                const res = await fetch('/api/accounts');
+                const accounts = await res.json();
+                renderAccounts(accounts);
+            } catch (err) {
+                console.error("Fetch accounts error:", err);
+            }
+        }
+
+        async function fetchStealEvents() {
+            try {
+                const res = await fetch('/api/steal-events');
+                const events = await res.json();
+                renderStealEvents(events);
+            } catch (err) {
+                console.error("Fetch steal events error:", err);
+            }
+        }
+
+        function formatRelativeTime(seconds) {
+            if (seconds < 60) return `${seconds} dtk lalu`;
+            if (seconds < 3600) return `${Math.floor(seconds / 60)} mnt lalu`;
+            return `${Math.floor(seconds / 3600)} jam lalu`;
+        }
+
+        function renderChips(itemsObj) {
+            if (!itemsObj || Object.keys(itemsObj).length === 0) {
+                return '<span class="chip-empty">Kosong</span>';
+            }
+            return Object.entries(itemsObj).map(([name, count]) => `
+                <div class="item-chip">
+                    <span>${name}</span>
+                    <span class="chip-qty mono">x${count}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderAccounts(accounts) {
+            const grid = document.getElementById('viewAccounts');
+            const countBadge = document.getElementById('accountCountBadge');
+            const tabCount = document.getElementById('tabCount');
+
+            const onlineCount = accounts.filter(a => a.isOnline).length;
+            countBadge.innerText = `${onlineCount} / ${accounts.length} Akun Online`;
+            tabCount.innerText = accounts.length;
+
+            if (accounts.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-box">
+                        <h3>Belum Ada Akun Terhubung</h3>
+                        <p>Jalankan script di executor Roblox dan aktifkan tombol <b>Monitoring Web</b>.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = accounts.map(acc => {
+                const avatar = `https://www.roblox.com/headshot-thumbnail/image?userId=${acc.userId}&width=150&height=150&format=png`;
+                const statusClass = acc.isOnline ? 'status-online' : 'status-offline';
+                const statusText = acc.isOnline ? '🟢 ONLINE' : '🔴 OFFLINE';
+                const dotClass = acc.isOnline ? 'online-dot' : 'online-dot offline-dot';
+
+                return `
+                    <div class="account-card">
+                        <!-- TOP: PLAYER INFO -->
+                        <div class="card-top">
+                            <div class="avatar-wrap">
+                                <img src="${avatar}" class="player-avatar" alt="Avatar" onerror="this.src='https://tr.rbxcdn.com/53eb9b17fe1432a809c73a13889b5006/150/150/AvatarHeadshot/Png'">
+                                <div class="${dotClass}"></div>
+                            </div>
+                            <div class="player-info">
+                                <h3>${acc.displayName}</h3>
+                                <p>@${acc.username}</p>
+                            </div>
+                            <span class="badge-status ${statusClass}">${statusText}</span>
+                        </div>
+
+                        <!-- HERO STATS: MONEY & SPEED / TREADMILL -->
+                        <div class="stats-hero">
+                            <div class="hero-tile">
+                                <span class="hero-label">💰 Money Sekarang</span>
+                                <span class="hero-value val-money mono">${acc.money || '$0'}</span>
+                            </div>
+                            <div class="hero-tile">
+                                <span class="hero-label">⚡ Treadmill / Speed</span>
+                                <span class="hero-value val-speed mono">${acc.speed || '0'}</span>
+                            </div>
+                        </div>
+
+                        <!-- PET DI KANDANG (ACTIVE) -->
+                        <div class="inv-section">
+                            <div class="inv-header">
+                                <span class="inv-title">🏡 Pet di Kandang (Active)</span>
+                                <span class="inv-count-badge mono">${acc.petKandangCount || 0} Pet</span>
+                            </div>
+                            <div class="items-chips">
+                                ${renderChips(acc.petsInKandang)}
+                            </div>
+                        </div>
+
+                        <!-- TELUR DI BACKPACK -->
+                        <div class="inv-section">
+                            <div class="inv-header">
+                                <span class="inv-title">🎒 Telur di Backpack</span>
+                                <span class="inv-count-badge mono">${acc.eggBackpackCount || 0} Telur</span>
+                            </div>
+                            <div class="items-chips">
+                                ${renderChips(acc.eggsInBackpack)}
+                            </div>
+                        </div>
+
+                        <!-- PET DI BACKPACK -->
+                        <div class="inv-section">
+                            <div class="inv-header">
+                                <span class="inv-title">🐾 Pet di Backpack</span>
+                                <span class="inv-count-badge mono">${acc.petBackpackCount || 0} Pet</span>
+                            </div>
+                            <div class="items-chips">
+                                ${renderChips(acc.petsInBackpack)}
+                            </div>
+                        </div>
+
+                        <!-- FOOTER INFO -->
+                        <div class="card-bottom">
+                            <span>⏳ Durasi: ${acc.uptime || 'N/A'}</span>
+                            <span>📶 Ping: ${acc.ping || 'N/A'}</span>
+                            <span>🕒 ${formatRelativeTime(acc.lastSeenAgo)}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderStealEvents(events) {
+            const grid = document.getElementById('stealGrid');
+            const tabStealCount = document.getElementById('tabStealCount');
+            tabStealCount.innerText = events.length;
+
+            if (events.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-box">
+                        <h3>Belum Ada Telur Dicuri</h3>
+                        <p>Notifikasi realtime akan muncul saat akun mencuri telur di game.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = events.map(ev => {
+                const rClass = `rarity-${ev.rarity || 'Common'}`;
+                const timeAgoSec = Math.floor((Date.now() - (ev.timestamp || Date.now())) / 1000);
+
+                return `
+                    <div class="steal-card">
+                        <span class="steal-icon">🕵️</span>
+                        <div class="steal-details">
+                            <div class="steal-title-row">
+                                <span class="steal-egg-name">${ev.eggName}</span>
+                                <span class="rarity-pill ${rClass}">${ev.rarity}</span>
+                            </div>
+                            <div class="steal-meta">
+                                <span>👤 <b>${ev.displayName}</b></span>
+                                <span>💸 Earn Rate: <b class="mono">$${ev.earnRate}/s</b></span>
+                                <span>📊 Scale: <b class="mono">${ev.scale}x</b></span>
+                                <span>🧬 Mutasi: <b>${ev.mutations}</b></span>
+                            </div>
+                        </div>
+                        <div class="steal-time">
+                            ${formatRelativeTime(timeAgoSec)}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function startDataPolling() {
+            fetchAccounts();
+            fetchStealEvents();
+            setInterval(() => {
+                fetchAccounts();
+                fetchStealEvents();
+            }, 3000); // Auto-sync setiap 3 detik
+        }
     </script>
 </body>
 </html>
