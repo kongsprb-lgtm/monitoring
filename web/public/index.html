@@ -713,10 +713,10 @@
             transform: rotate(90deg);
         }
 
-        /* 4 STATS TILES */
+        /* 6 STATS TILES */
         .detail-stats-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 14px;
         }
 
@@ -726,7 +726,7 @@
             }
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 520px) {
             .detail-stats-grid {
                 grid-template-columns: 1fr;
             }
@@ -1231,7 +1231,7 @@
                     </div>
                 </div>
 
-                <!-- 4 METRIC TILES -->
+                <!-- 6 METRIC TILES -->
                 <div class="detail-stats-grid">
                     <div class="stat-card-box">
                         <span class="stat-card-header">💰 Money Sekarang</span>
@@ -1240,9 +1240,21 @@
                     </div>
 
                     <div class="stat-card-box">
+                        <span class="stat-card-header">💸 Money / Detik</span>
+                        <span class="stat-card-val val-cyan mono" id="detailMoneyPerSec">$0/s</span>
+                        <span class="stat-card-sub">Total penghasilan per detik</span>
+                    </div>
+
+                    <div class="stat-card-box">
                         <span class="stat-card-header">⚡ Treadmill / Speed</span>
                         <span class="stat-card-val val-cyan mono" id="detailSpeed">0</span>
                         <span class="stat-card-sub">Kecepatan treadmill karakter</span>
+                    </div>
+
+                    <div class="stat-card-box">
+                        <span class="stat-card-header">👑 Best Pet</span>
+                        <div class="stat-card-val mono" id="detailBestPet" style="font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">N/A</div>
+                        <span class="stat-card-sub" id="detailBestPetSub">Pet earn rate tertinggi</span>
                     </div>
 
                     <div class="stat-card-box">
@@ -1313,8 +1325,42 @@
         let activeCategory = 'eggs'; // 'eggs', 'pets_bp', 'pets_active'
         let cachedAccounts = [];
         let cachedSteals = [];
+        let cachedThumbnails = {};
+        let pendingThumbnailIds = new Set();
+        let thumbnailFetchTimeout = null;
         let itemSearchQuery = '';
         let accountSearchQuery = '';
+
+        function queueThumbnailFetch(id) {
+            const cleanId = String(id || '').match(/\d+/)?.[0];
+            if (!cleanId || cachedThumbnails[cleanId] || pendingThumbnailIds.has(cleanId)) return;
+            pendingThumbnailIds.add(cleanId);
+            if (thumbnailFetchTimeout) clearTimeout(thumbnailFetchTimeout);
+            thumbnailFetchTimeout = setTimeout(async () => {
+                const idsToFetch = Array.from(pendingThumbnailIds);
+                pendingThumbnailIds.clear();
+                if (idsToFetch.length === 0) return;
+                try {
+                    const res = await fetch(`/api/monitoringjoki?action=thumbnails&ids=${idsToFetch.join(',')}`);
+                    const data = await res.json();
+                    if (data.success && data.thumbnails) {
+                        Object.assign(cachedThumbnails, data.thumbnails);
+                        // Perbarui gambar yang sedang tampil di layar
+                        for (const [tId, url] of Object.entries(data.thumbnails)) {
+                            document.querySelectorAll(`img[data-asset-id="${tId}"]`).forEach(img => {
+                                if (img.src !== url) {
+                                    img.src = url;
+                                    img.style.display = 'block';
+                                    if (img.nextElementSibling) img.nextElementSibling.style.display = 'none';
+                                }
+                            });
+                        }
+                    }
+                } catch (e) {
+                    console.error('Thumbnail fetch error:', e);
+                }
+            }, 120);
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             const savedPin = localStorage.getItem(PIN_KEY);
@@ -1445,6 +1491,9 @@
                 if (data.success) {
                     cachedAccounts = data.accounts || [];
                     cachedSteals = data.stealEvents || [];
+                    if (data.thumbnails) {
+                        Object.assign(cachedThumbnails, data.thumbnails);
+                    }
 
                     // Update Top Stats
                     const onlineCount = cachedAccounts.filter(a => a.isOnline).length;
@@ -1519,11 +1568,18 @@
                             <div class="stat-col">
                                 <span class="stat-col-label">💰 Money</span>
                                 <span class="stat-col-val val-gold mono">${acc.money || '$0'}</span>
+                                <span class="stat-col-sub mono" style="color: #38bdf8; font-size: 11px; font-weight: 600;">${acc.moneyPerSecond || '$0/s'}</span>
                             </div>
 
                             <div class="stat-col">
                                 <span class="stat-col-label">⚡ Speed</span>
                                 <span class="stat-col-val val-cyan mono">${acc.speed || '0'}</span>
+                            </div>
+
+                            <div class="stat-col">
+                                <span class="stat-col-label">👑 Best Pet</span>
+                                <span class="stat-col-val mono" style="font-size: 13px; color: #fde047; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${acc.bestPet ? acc.bestPet.name : 'N/A'}</span>
+                                <span class="stat-col-sub mono" style="color: #a78bfa; font-size: 11px;">${acc.bestPet ? `${acc.bestPet.rarity} • ${acc.bestPet.earnRate}` : '-'}</span>
                             </div>
 
                             <div class="stat-col">
@@ -1570,10 +1626,31 @@
 
             // Metrics
             document.getElementById('detailMoney').innerText = acc.money || '$0';
+            document.getElementById('detailMoneyPerSec').innerText = acc.moneyPerSecond || '$0/s';
             document.getElementById('detailSpeed').innerText = acc.speed || '0';
             document.getElementById('detailKandangCount').innerText = `${acc.petKandangCount || 0} / 19`;
             document.getElementById('detailUptimeVal').innerText = acc.uptime || '00:00:00';
             document.getElementById('detailPingVal').innerText = `📶 Ping: ${acc.ping || 'N/A'} • ${formatRelativeTime(acc.lastSeenAgo)}`;
+
+            // Best Pet
+            if (acc.bestPet) {
+                const bp = acc.bestPet;
+                const rClass = `rarity-${bp.rarity || 'Common'}`;
+                const bpThumb = bp.imageUrl || (bp.icon && cachedThumbnails[bp.icon]) || '';
+                if (!bpThumb && bp.icon) queueThumbnailFetch(bp.icon);
+
+                document.getElementById('detailBestPet').innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        ${bpThumb ? `<img src="${bpThumb}" data-asset-id="${bp.icon}" style="width: 22px; height: 22px; object-fit: contain; border-radius: 4px;">` : '👑'}
+                        <span style="color: #fde047; font-weight: 800; font-size: 15px;">${bp.name}</span>
+                        <span class="rarity-pill ${rClass}" style="font-size: 9px; padding: 2px 6px;">${bp.rarity}</span>
+                    </div>
+                `;
+                document.getElementById('detailBestPetSub').innerText = `${bp.earnRate} • Scale ${bp.scale}`;
+            } else {
+                document.getElementById('detailBestPet').innerText = 'N/A';
+                document.getElementById('detailBestPetSub').innerText = 'Belum ada pet terdeteksi';
+            }
 
             // Badges Count
             const eggsCount = acc.eggBackpackCount || countObj(acc.eggsInBackpack);
@@ -1755,9 +1832,20 @@
                     const rarityClass = rarity.charAt(0).toUpperCase() + rarity.slice(1).toLowerCase();
                     const cleanIcon = icon && String(icon).match(/\d+/) ? String(icon).match(/\d+/)[0] : null;
 
-                    const iconVisual = cleanIcon
-                        ? `<img src="https://www.roblox.com/asset-thumbnail/image?assetId=${cleanIcon}&width=150&height=150&format=png" class="item-card-img" alt="${name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"><div style="display:none; width:100%; height:100%;">${getEggOrPetSvg(rarityClass, activeCategory)}</div>`
-                        : getEggOrPetSvg(rarityClass, activeCategory);
+                    const directImg = (typeof val === 'object' && val !== null && val.imageUrl) 
+                        || (cleanIcon && cachedThumbnails[cleanIcon]) 
+                        || '';
+
+                    if (!directImg && cleanIcon) {
+                        queueThumbnailFetch(cleanIcon);
+                    }
+
+                    const iconVisual = directImg
+                        ? `<img src="${directImg}" data-asset-id="${cleanIcon || ''}" class="item-card-img" alt="${name}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"><div style="display:none; width:100%; height:100%;">${getEggOrPetSvg(rarityClass, activeCategory)}</div>`
+                        : (cleanIcon
+                            ? `<img src="" data-asset-id="${cleanIcon}" class="item-card-img" style="display:none;" alt="${name}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"><div style="width:100%; height:100%;">${getEggOrPetSvg(rarityClass, activeCategory)}</div>`
+                            : getEggOrPetSvg(rarityClass, activeCategory)
+                        );
 
                     return `
                         <div class="item-card card-${rarityClass}">
