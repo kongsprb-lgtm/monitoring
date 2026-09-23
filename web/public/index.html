@@ -821,10 +821,72 @@
             color: #fff;
         }
 
+        /* RARITY FILTER BAR (ROCKHUB STYLE) */
+        .rarity-filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 2px 2px 6px 2px;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        .rarity-filter-bar::-webkit-scrollbar {
+            display: none;
+        }
+        .rarity-filter-btn {
+            background: #101726;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            transition: all 0.2s;
+        }
+        .rarity-filter-btn:hover {
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        .rarity-filter-btn.active {
+            background: #fff;
+            color: #07090e;
+            border-color: #fff;
+            font-weight: 800;
+        }
+        .rarity-filter-btn.btn-divine.active { background: #fde047; color: #171100; border-color: #fde047; box-shadow: 0 0 12px rgba(253, 224, 71, 0.4); }
+        .rarity-filter-btn.btn-secret.active { background: #22d3ee; color: #032029; border-color: #22d3ee; box-shadow: 0 0 12px rgba(34, 211, 238, 0.4); }
+        .rarity-filter-btn.btn-mythic.active { background: #f87171; color: #fff; border-color: #f87171; box-shadow: 0 0 12px rgba(248, 113, 113, 0.4); }
+        .rarity-filter-btn.btn-legendary.active { background: #fbbf24; color: #1c1100; border-color: #fbbf24; box-shadow: 0 0 12px rgba(251, 191, 36, 0.4); }
+        .rarity-filter-btn.btn-epic.active { background: #c084fc; color: #1f0738; border-color: #c084fc; box-shadow: 0 0 12px rgba(192, 132, 252, 0.4); }
+        .rarity-filter-btn.btn-rare.active { background: #38bdf8; color: #041f2e; border-color: #38bdf8; box-shadow: 0 0 12px rgba(56, 189, 248, 0.4); }
+        .rarity-filter-btn.btn-uncommon.active { background: #34d399; color: #021a12; border-color: #34d399; box-shadow: 0 0 12px rgba(52, 211, 153, 0.4); }
+        .rarity-filter-btn.btn-common.active { background: #94a3b8; color: #0f172a; border-color: #94a3b8; }
+
+        .filter-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .dot-divine { background: #fde047; box-shadow: 0 0 6px #fde047; }
+        .dot-secret { background: #22d3ee; box-shadow: 0 0 6px #22d3ee; }
+        .dot-mythic { background: #f87171; box-shadow: 0 0 6px #f87171; }
+        .dot-legendary { background: #fbbf24; box-shadow: 0 0 6px #fbbf24; }
+        .dot-epic { background: #c084fc; box-shadow: 0 0 6px #c084fc; }
+        .dot-rare { background: #38bdf8; box-shadow: 0 0 6px #38bdf8; }
+        .dot-uncommon { background: #34d399; box-shadow: 0 0 6px #34d399; }
+        .dot-common { background: #94a3b8; }
+
         /* INVENTORY GRID OF CARDS (ROCKHUB STYLE) */
         .inventory-cards-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(154px, 1fr));
             gap: 14px;
             margin-top: 4px;
         }
@@ -839,68 +901,105 @@
             align-items: center;
             text-align: center;
             position: relative;
-            transition: all 0.2s ease;
+            transition: all 0.22s ease;
             user-select: none;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
         }
 
+        .card-Divine { border-color: rgba(250, 204, 21, 0.35); }
+        .card-Secret { border-color: rgba(34, 211, 238, 0.35); }
+        .card-Mythic { border-color: rgba(248, 113, 113, 0.35); }
+        .card-Legendary { border-color: rgba(251, 191, 36, 0.3); }
+        .card-Epic { border-color: rgba(192, 132, 252, 0.3); }
+        .card-Rare { border-color: rgba(56, 189, 248, 0.25); }
+        .card-Uncommon { border-color: rgba(52, 211, 153, 0.25); }
+        .card-Common { border-color: var(--border-color); }
+
         .item-card:hover {
-            border-color: var(--primary);
-            transform: translateY(-3px);
+            transform: translateY(-4px);
             background: var(--bg-card-hover);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px rgba(56, 189, 248, 0.15);
         }
+        .card-Divine:hover { border-color: #fde047; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 20px rgba(250, 204, 21, 0.35); }
+        .card-Secret:hover { border-color: #22d3ee; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 20px rgba(34, 211, 238, 0.35); }
+        .card-Mythic:hover { border-color: #f87171; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 20px rgba(248, 113, 113, 0.35); }
+        .card-Legendary:hover { border-color: #fbbf24; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 20px rgba(251, 191, 36, 0.3); }
+        .card-Epic:hover { border-color: #c084fc; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 20px rgba(192, 132, 252, 0.3); }
+        .card-Rare:hover { border-color: #38bdf8; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.25); }
+        .card-Uncommon:hover { border-color: #34d399; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 20px rgba(52, 211, 153, 0.25); }
+        .card-Common:hover { border-color: var(--primary); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 16px rgba(56, 189, 248, 0.15); }
 
         .item-card-qty {
             position: absolute;
             top: 8px;
             right: 8px;
-            background: rgba(245, 158, 11, 0.16);
+            background: rgba(245, 158, 11, 0.18);
             color: #fbbf24;
-            border: 1px solid rgba(245, 158, 11, 0.32);
+            border: 1px solid rgba(245, 158, 11, 0.35);
             border-radius: 6px;
-            padding: 2px 6px;
+            padding: 2px 7px;
             font-size: 11px;
             font-weight: 800;
+            z-index: 2;
         }
 
-        .item-card-icon-wrap {
-            width: 64px;
-            height: 64px;
-            border-radius: 16px;
-            background: radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, rgba(13, 18, 31, 0) 70%);
+        .item-card-visual-wrap {
+            width: 80px;
+            height: 80px;
+            border-radius: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 32px;
-            margin: 6px 0 10px 0;
-            filter: drop-shadow(0 2px 8px rgba(56, 189, 248, 0.2));
-            transition: transform 0.2s;
+            margin: 4px 0 6px 0;
+            position: relative;
+            transition: transform 0.22s ease;
         }
 
-        .item-card:hover .item-card-icon-wrap {
+        .item-card:hover .item-card-visual-wrap {
             transform: scale(1.1);
         }
+
+        .item-card-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
+        }
+
+        .item-card-svg {
+            width: 72px;
+            height: 72px;
+            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
+        }
+
+        .rarity-accent-bar {
+            width: 78%;
+            height: 3px;
+            border-radius: 3px;
+            margin: 4px 0 10px 0;
+            background: #64748b;
+        }
+        .rarity-bar-Divine { background: #fde047; box-shadow: 0 0 10px #fde047; }
+        .rarity-bar-Secret { background: #22d3ee; box-shadow: 0 0 10px #22d3ee; }
+        .rarity-bar-Mythic { background: #f87171; box-shadow: 0 0 10px #f87171; }
+        .rarity-bar-Legendary { background: #fbbf24; box-shadow: 0 0 10px #fbbf24; }
+        .rarity-bar-Epic { background: #c084fc; box-shadow: 0 0 10px #c084fc; }
+        .rarity-bar-Rare { background: #38bdf8; box-shadow: 0 0 10px #38bdf8; }
+        .rarity-bar-Uncommon { background: #34d399; box-shadow: 0 0 10px #34d399; }
+        .rarity-bar-Common { background: #64748b; }
 
         .item-card-name {
             font-size: 13px;
             font-weight: 700;
             color: #f8fafc;
             line-height: 1.35;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             word-break: break-word;
-        }
-
-        .item-card-tag {
-            font-size: 10px;
-            font-weight: 700;
-            color: var(--primary);
-            background: rgba(56, 189, 248, 0.1);
-            border: 1px solid rgba(56, 189, 248, 0.2);
-            border-radius: 6px;
-            padding: 2px 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
+            min-height: 35px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
         /* ================= 3. VIEW: LIVE STEAL FEED ================= */
@@ -1179,6 +1278,19 @@
                     </div>
                 </div>
 
+                <!-- RARITY FILTER BAR (ROCKHUB STYLE) -->
+                <div class="rarity-filter-bar">
+                    <button class="rarity-filter-btn active" id="rarityFilterAll" onclick="setRarityFilter('ALL')">All Rarity</button>
+                    <button class="rarity-filter-btn btn-divine" id="rarityFilterDivine" onclick="setRarityFilter('Divine')"><span class="filter-dot dot-divine"></span> Divine</button>
+                    <button class="rarity-filter-btn btn-secret" id="rarityFilterSecret" onclick="setRarityFilter('Secret')"><span class="filter-dot dot-secret"></span> Secret</button>
+                    <button class="rarity-filter-btn btn-mythic" id="rarityFilterMythic" onclick="setRarityFilter('Mythic')"><span class="filter-dot dot-mythic"></span> Mythic</button>
+                    <button class="rarity-filter-btn btn-legendary" id="rarityFilterLegendary" onclick="setRarityFilter('Legendary')"><span class="filter-dot dot-legendary"></span> Legendary</button>
+                    <button class="rarity-filter-btn btn-epic" id="rarityFilterEpic" onclick="setRarityFilter('Epic')"><span class="filter-dot dot-epic"></span> Epic</button>
+                    <button class="rarity-filter-btn btn-rare" id="rarityFilterRare" onclick="setRarityFilter('Rare')"><span class="filter-dot dot-rare"></span> Rare</button>
+                    <button class="rarity-filter-btn btn-uncommon" id="rarityFilterUncommon" onclick="setRarityFilter('Uncommon')"><span class="filter-dot dot-uncommon"></span> Uncommon</button>
+                    <button class="rarity-filter-btn btn-common" id="rarityFilterCommon" onclick="setRarityFilter('Common')"><span class="filter-dot dot-common"></span> Common</button>
+                </div>
+
                 <!-- INVENTORY ITEMS GRID -->
                 <div class="inventory-cards-grid" id="detailItemsGrid">
                     <!-- Cards rendered here -->
@@ -1298,6 +1410,10 @@
             document.getElementById('itemSearchInput').value = '';
             itemSearchQuery = '';
             activeCategory = 'eggs';
+            selectedRarityFilter = 'ALL';
+            document.querySelectorAll('.rarity-filter-btn').forEach(btn => btn.classList.remove('active'));
+            const allBtn = document.getElementById('rarityFilterAll');
+            if (allBtn) allBtn.classList.add('active');
             switchMainTab('accounts');
             updateDetailView();
         }
@@ -1471,10 +1587,93 @@
             renderDetailItems();
         }
 
+        let selectedRarityFilter = 'ALL';
+
+        function setRarityFilter(r) {
+            selectedRarityFilter = r;
+            document.querySelectorAll('.rarity-filter-btn').forEach(btn => btn.classList.remove('active'));
+            const btn = document.getElementById(r === 'ALL' ? 'rarityFilterAll' : `rarityFilter${r}`);
+            if (btn) btn.classList.add('active');
+            renderDetailItems();
+        }
+
+        function detectRarity(name) {
+            const n = String(name || '').toLowerCase();
+            if (n.includes('divine') || n.includes('godly') || n.includes('el maja') || n.includes('celestial') || n.includes('seraph') || n.includes('archangel')) return 'Divine';
+            if (n.includes('eternal') || n.includes('secret') || n.includes('cosmic') || n.includes('riftborn') || n.includes('burner') || n.includes('trala') || n.includes('saturno') || n.includes('vacca') || n.includes('void') || n.includes('astral') || n.includes('dimension')) return 'Secret';
+            if (n.includes('mythic') || n.includes('kitsune') || n.includes('phoenix') || n.includes('oni tiger') || n.includes('gorilla king') || n.includes('skeleton boss') || n.includes('jellyfish') || n.includes('world eater') || n.includes('demon') || n.includes('hydra') || n.includes('cerberus')) return 'Mythic';
+            if (n.includes('legendary') || n.includes('dragon') || n.includes('pegasus') || n.includes('mosasaurus') || n.includes('skeleton horse') || n.includes('ankylosaurus') || n.includes('rhinotaur') || n.includes('abyss') || n.includes('riftwing') || n.includes('wyvern') || n.includes('griffin')) return 'Legendary';
+            if (n.includes('epic') || n.includes('volcano') || n.includes('titan') || n.includes('galaxy') || n.includes('dream') || n.includes('flame') || n.includes('wendigo') || n.includes('golem') || n.includes('thunder') || n.includes('storm')) return 'Epic';
+            if (n.includes('rare') || n.includes('cherry') || n.includes('warden') || n.includes('toro') || n.includes('mantis') || n.includes('mire') || n.includes('ice') || n.includes('frost') || n.includes('coral') || n.includes('crystal')) return 'Rare';
+            if (n.includes('uncommon') || n.includes('yeti') || n.includes('gorilla') || n.includes('wolf') || n.includes('bear') || n.includes('fox') || n.includes('panda') || n.includes('lion')) return 'Uncommon';
+            return 'Common';
+        }
+
+        function getEggOrPetSvg(rarity, category) {
+            const r = rarity || 'Common';
+            const isEgg = category === 'eggs';
+
+            const colorMap = {
+                'Divine': { p: '#fde047', s: '#eab308', d: '#713f12', glow: '#fef08a' },
+                'Secret': { p: '#22d3ee', s: '#06b6d4', d: '#164e63', glow: '#67e8f9' },
+                'Mythic': { p: '#f87171', s: '#dc2626', d: '#7f1d1d', glow: '#fca5a5' },
+                'Legendary': { p: '#fbbf24', s: '#d97706', d: '#78350f', glow: '#fde68a' },
+                'Epic': { p: '#c084fc', s: '#9333ea', d: '#581c87', glow: '#e9d5ff' },
+                'Rare': { p: '#38bdf8', s: '#0284c7', d: '#0c4a6e', glow: '#bae6fd' },
+                'Uncommon': { p: '#34d399', s: '#059669', d: '#064e3b', glow: '#a7f3d0' },
+                'Common': { p: '#94a3b8', s: '#64748b', d: '#334155', glow: '#cbd5e1' }
+            };
+            const c = colorMap[r] || colorMap['Common'];
+
+            if (isEgg) {
+                return `
+                <svg class="item-card-svg" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <radialGradient id="eggGrad_${r}" cx="35%" cy="30%" r="65%">
+                            <stop offset="0%" stop-color="${c.glow}" stop-opacity="0.95"/>
+                            <stop offset="35%" stop-color="${c.p}"/>
+                            <stop offset="70%" stop-color="${c.s}"/>
+                            <stop offset="100%" stop-color="${c.d}"/>
+                        </radialGradient>
+                    </defs>
+                    <ellipse cx="50" cy="65" rx="35" ry="45" fill="url(#eggGrad_${r})" />
+                    <ellipse cx="40" cy="42" rx="13" ry="20" fill="#ffffff" opacity="0.28" transform="rotate(-15 40 42)"/>
+                    <path d="M 28 65 Q 50 82 72 65 Q 50 72 28 65" fill="${c.glow}" opacity="0.55"/>
+                    <circle cx="50" cy="55" r="4" fill="#ffffff" opacity="0.8"/>
+                </svg>`;
+            } else {
+                return `
+                <svg class="item-card-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <radialGradient id="petGrad_${r}" cx="35%" cy="30%" r="65%">
+                            <stop offset="0%" stop-color="${c.glow}" stop-opacity="0.95"/>
+                            <stop offset="40%" stop-color="${c.p}"/>
+                            <stop offset="80%" stop-color="${c.s}"/>
+                            <stop offset="100%" stop-color="${c.d}"/>
+                        </radialGradient>
+                    </defs>
+                    <g>
+                        <ellipse cx="50" cy="62" rx="22" ry="17" fill="url(#petGrad_${r})"/>
+                        <ellipse cx="28" cy="42" rx="8" ry="12" fill="url(#petGrad_${r})" transform="rotate(-15 28 42)"/>
+                        <ellipse cx="43" cy="34" rx="8" ry="12" fill="url(#petGrad_${r})" transform="rotate(-5 43 34)"/>
+                        <ellipse cx="57" cy="34" rx="8" ry="12" fill="url(#petGrad_${r})" transform="rotate(5 57 34)"/>
+                        <ellipse cx="72" cy="42" rx="8" ry="12" fill="url(#petGrad_${r})" transform="rotate(15 72 42)"/>
+                        <circle cx="50" cy="62" r="5" fill="#ffffff" opacity="0.35"/>
+                    </g>
+                </svg>`;
+            }
+        }
+
         function countObj(obj) {
             if (!obj || typeof obj !== 'object') return 0;
             let sum = 0;
-            for (const c of Object.values(obj)) sum += Number(c) || 0;
+            for (const c of Object.values(obj)) {
+                if (typeof c === 'object' && c !== null) {
+                    sum += Number(c.count) || 1;
+                } else {
+                    sum += Number(c) || 0;
+                }
+            }
             return sum;
         }
 
@@ -1489,61 +1688,89 @@
             return true;
         }
 
-        // Render Cards Grid (with scroll position preservation)
+        // Render Cards Grid (with scroll position preservation and RockHub aesthetics)
         function renderDetailItems() {
             const grid = document.getElementById('detailItemsGrid');
             const acc = cachedAccounts.find(a => a.username === currentDetailUsername);
             if (!acc) return;
 
             let sourceObj = {};
-            let iconEmoji = '🥚';
-            let tagText = 'Telur';
-
             if (activeCategory === 'eggs') {
                 sourceObj = acc.eggsInBackpack || {};
-                iconEmoji = '🥚';
-                tagText = 'Egg';
             } else if (activeCategory === 'pets_bp') {
                 sourceObj = acc.petsInBackpack || {};
-                iconEmoji = '🐾';
-                tagText = 'Pet Backpack';
             } else if (activeCategory === 'pets_active') {
                 sourceObj = acc.petsInKandang || {};
-                iconEmoji = '🏡';
-                tagText = 'Pet Aktif';
             }
 
-            // Filter & Sort
+            // Filter nama yang valid
             let entries = Object.entries(sourceObj).filter(([name, _]) => isValidInventoryName(name));
             
+            // Filter pencarian teks
             if (itemSearchQuery) {
                 entries = entries.filter(([name, _]) => name.toLowerCase().includes(itemSearchQuery));
             }
 
-            // Urutkan dari jumlah terbanyak
-            entries.sort((a, b) => (Number(b[1]) || 0) - (Number(a[1]) || 0));
+            // Filter Rarity bar
+            if (selectedRarityFilter !== 'ALL') {
+                entries = entries.filter(([name, val]) => {
+                    const r = (typeof val === 'object' && val !== null ? val.rarity : detectRarity(name)) || 'Common';
+                    return r.toLowerCase() === selectedRarityFilter.toLowerCase();
+                });
+            }
 
-            // Simpan scroll sebelum update
+            // Urutkan dari jumlah item terbanyak
+            entries.sort((a, b) => {
+                const countA = typeof a[1] === 'object' && a[1] !== null ? (Number(a[1].count) || 1) : (Number(a[1]) || 1);
+                const countB = typeof b[1] === 'object' && b[1] !== null ? (Number(b[1].count) || 1) : (Number(b[1]) || 1);
+                return countB - countA;
+            });
+
+            // Simpan posisi scroll sebelum update
             const prevScroll = window.scrollY;
 
             if (entries.length === 0) {
                 grid.innerHTML = `
                     <div class="empty-box">
                         <h3>Tidak Ada Item</h3>
-                        <p>${itemSearchQuery ? 'Tidak ada item yang cocok dengan pencarian.' : 'Kategori ini masih kosong.'}</p>
+                        <p>${itemSearchQuery ? 'Tidak ada item yang cocok dengan pencarian.' : (selectedRarityFilter !== 'ALL' ? `Tidak ada item dengan rarity ${selectedRarityFilter}.` : 'Kategori ini masih kosong.')}</p>
                     </div>
                 `;
             } else {
-                grid.innerHTML = entries.map(([name, count]) => `
-                    <div class="item-card">
-                        <span class="item-card-qty mono">x${count}</span>
-                        <div class="item-card-icon-wrap">
-                            <span>${iconEmoji}</span>
+                grid.innerHTML = entries.map(([name, val]) => {
+                    let count = 1;
+                    let rarity = 'Common';
+                    let icon = '';
+
+                    if (typeof val === 'object' && val !== null) {
+                        count = Number(val.count) || 1;
+                        rarity = val.rarity || detectRarity(name);
+                        icon = val.icon || '';
+                    } else {
+                        count = Number(val) || 1;
+                        rarity = detectRarity(name);
+                        icon = '';
+                    }
+
+                    const rarityClass = rarity.charAt(0).toUpperCase() + rarity.slice(1).toLowerCase();
+                    const cleanIcon = icon && String(icon).match(/\d+/) ? String(icon).match(/\d+/)[0] : null;
+
+                    const iconVisual = cleanIcon
+                        ? `<img src="https://www.roblox.com/asset-thumbnail/image?assetId=${cleanIcon}&width=150&height=150&format=png" class="item-card-img" alt="${name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"><div style="display:none; width:100%; height:100%;">${getEggOrPetSvg(rarityClass, activeCategory)}</div>`
+                        : getEggOrPetSvg(rarityClass, activeCategory);
+
+                    return `
+                        <div class="item-card card-${rarityClass}">
+                            <span class="item-card-qty mono">x${count}</span>
+                            <div class="item-card-visual-wrap">
+                                ${iconVisual}
+                            </div>
+                            <div class="rarity-accent-bar rarity-bar-${rarityClass}"></div>
+                            <span class="item-card-name" title="${name}">${name}</span>
+                            <span class="rarity-pill rarity-${rarityClass}">${rarity}</span>
                         </div>
-                        <span class="item-card-name">${name}</span>
-                        <span class="item-card-tag">${tagText}</span>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
             }
 
             // Kembalikan posisi scroll jika pengguna sedang berada di halaman detail
