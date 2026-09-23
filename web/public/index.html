@@ -4,26 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>P4kong x SysHub - Steal An Egg Joki Monitor</title>
+    <link rel="icon" type="image/png" href="/assets/logo.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-main: #07090e;
-            --bg-card: #0f1422;
-            --bg-card-hover: #141c2e;
-            --bg-chip: #182238;
-            --border-color: #1e293b;
-            --border-focus: #38bdf8;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
+            --bg-body: #07090e;
+            --bg-card: #0d121f;
+            --bg-card-hover: #12192b;
+            --bg-tile: #080c14;
+            --border-color: #1a2337;
+            --border-hover: rgba(56, 189, 248, 0.4);
             --primary: #38bdf8;
-            --primary-glow: rgba(56, 189, 248, 0.2);
+            --primary-glow: rgba(56, 189, 248, 0.25);
+            --accent-pink: #ec4899;
+            --accent-pink-glow: rgba(236, 72, 153, 0.3);
             --accent-green: #10b981;
-            --accent-green-bg: rgba(16, 185, 129, 0.15);
             --accent-gold: #f59e0b;
             --accent-purple: #a855f7;
             --accent-red: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
         }
 
         * {
@@ -35,7 +38,7 @@
         }
 
         body {
-            background-color: var(--bg-main);
+            background-color: var(--bg-body);
             color: var(--text-main);
             min-height: 100vh;
             display: flex;
@@ -43,7 +46,6 @@
             overflow-x: hidden;
         }
 
-        /* MONOSPACE CODE FONT */
         .mono {
             font-family: 'JetBrains Mono', monospace;
         }
@@ -63,7 +65,7 @@
         .pin-box {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 30px var(--primary-glow);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7), 0 0 30px var(--primary-glow);
             border-radius: 20px;
             padding: 36px 28px;
             width: 100%;
@@ -73,7 +75,7 @@
         }
 
         .pin-logo {
-            font-size: 42px;
+            font-size: 44px;
             margin-bottom: 12px;
             display: inline-block;
             filter: drop-shadow(0 0 15px rgba(56, 189, 248, 0.5));
@@ -94,11 +96,11 @@
 
         .pin-input {
             width: 100%;
-            background: #090d16;
+            background: var(--bg-tile);
             border: 2px solid var(--border-color);
             border-radius: 12px;
             padding: 14px;
-            font-size: 22px;
+            font-size: 24px;
             text-align: center;
             letter-spacing: 8px;
             color: var(--primary);
@@ -139,7 +141,7 @@
             font-weight: 600;
         }
 
-        /* ================= MAIN DASHBOARD ================= */
+        /* ================= DASHBOARD SCREEN ================= */
         #dashboardScreen {
             display: none;
             flex-direction: column;
@@ -147,10 +149,10 @@
         }
 
         .navbar {
-            background: rgba(15, 20, 34, 0.85);
-            backdrop-filter: blur(12px);
+            background: rgba(10, 14, 24, 0.85);
+            backdrop-filter: blur(14px);
             border-bottom: 1px solid var(--border-color);
-            padding: 14px 24px;
+            padding: 14px 28px;
             position: sticky;
             top: 0;
             z-index: 100;
@@ -163,6 +165,8 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            cursor: pointer;
+            user-select: none;
         }
 
         .brand-icon {
@@ -180,23 +184,23 @@
         .brand-text p {
             font-size: 11px;
             color: var(--text-muted);
-            font-weight: 500;
+            letter-spacing: 0.5px;
         }
 
         .nav-actions {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
         }
 
         .badge-live {
-            background: var(--accent-green-bg);
-            border: 1px solid rgba(16, 185, 129, 0.4);
-            color: #34d399;
-            font-size: 12px;
-            font-weight: 700;
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.25);
             padding: 6px 12px;
             border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -205,24 +209,25 @@
         .pulse {
             width: 8px;
             height: 8px;
+            background: var(--accent-green);
             border-radius: 50%;
-            background: #10b981;
-            box-shadow: 0 0 10px #10b981;
-            animation: pulseAnim 1.5s infinite;
+            box-shadow: 0 0 8px var(--accent-green);
+            animation: pulseAnim 2s infinite;
         }
 
         @keyframes pulseAnim {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.4; transform: scale(1.3); }
+            0% { transform: scale(0.95); opacity: 0.7; }
+            50% { transform: scale(1.3); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.7; }
         }
 
         .btn-lock {
-            background: #182238;
-            color: #94a3b8;
+            background: #131b2e;
+            color: var(--text-muted);
             border: 1px solid var(--border-color);
+            padding: 7px 14px;
             border-radius: 10px;
-            padding: 8px 14px;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
@@ -233,28 +238,61 @@
 
         .btn-lock:hover {
             color: #fff;
-            border-color: #475569;
+            border-color: var(--primary);
+            background: #1a253e;
         }
 
-        /* CONTAINER & NAV TABS */
+        /* MAIN CONTAINER */
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
+            width: 100%;
             margin: 0 auto;
             padding: 24px;
-            width: 100%;
             flex: 1;
         }
 
-        .tab-bar {
+        /* BREADCRUMB */
+        .breadcrumb {
             display: flex;
-            gap: 10px;
-            margin-bottom: 24px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 12px;
-            overflow-x: auto;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-dim);
+            margin-bottom: 20px;
+            user-select: none;
         }
 
-        .tab-btn {
+        .breadcrumb a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.15s;
+            cursor: pointer;
+        }
+
+        .breadcrumb a:hover {
+            color: #fff;
+        }
+
+        .breadcrumb .sep {
+            color: #334155;
+        }
+
+        .breadcrumb .current {
+            color: var(--accent-pink);
+            font-weight: 700;
+        }
+
+        /* TOP VIEW TABS (AKUN JOKI VS STEAL FEED) */
+        .main-nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 22px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 14px;
+        }
+
+        .main-tab-btn {
             background: transparent;
             border: none;
             color: var(--text-muted);
@@ -267,76 +305,106 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            white-space: nowrap;
         }
 
-        .tab-btn:hover {
+        .main-tab-btn:hover {
             color: #fff;
             background: rgba(255, 255, 255, 0.04);
         }
 
-        .tab-btn.active {
+        .main-tab-btn.active {
             color: #07090e;
             background: var(--primary);
             font-weight: 700;
             box-shadow: 0 4px 14px var(--primary-glow);
         }
 
-        /* GRID AKUN */
-        .accounts-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-            gap: 22px;
-        }
-
-        @media (max-width: 480px) {
-            .accounts-grid {
-                grid-template-columns: 1fr;
-            }
-            .container {
-                padding: 14px;
-            }
-        }
-
-        /* KARTU AKUN */
-        .account-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 18px;
-            padding: 20px;
+        /* ================= 1. VIEW: ACCOUNTS LIST (ROCKHUB STYLE) ================= */
+        #viewAccounts {
             display: flex;
             flex-direction: column;
-            gap: 16px;
-            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+            gap: 12px;
         }
 
-        .account-card:hover {
-            border-color: rgba(56, 189, 248, 0.5);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.1);
+        .list-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            gap: 12px;
+            flex-wrap: wrap;
         }
 
-        /* CARD HEADER */
-        .card-top {
+        .search-box {
+            position: relative;
+            flex: 1;
+            max-width: 380px;
+        }
+
+        .search-input {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 11px 16px 11px 40px;
+            color: #fff;
+            font-size: 13px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 12px var(--primary-glow);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 14px;
+            color: var(--text-dim);
+            pointer-events: none;
+        }
+
+        /* ACCOUNT ROW CARD */
+        .account-row {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px 22px;
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 18px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
         }
 
-        .avatar-wrap {
+        .account-row:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px rgba(56, 189, 248, 0.08);
+        }
+
+        .acc-avatar-wrap {
             position: relative;
+            flex-shrink: 0;
         }
 
-        .player-avatar {
-            width: 56px;
-            height: 56px;
+        .acc-avatar {
+            width: 52px;
+            height: 52px;
             border-radius: 14px;
             background: #182238;
-            border: 2px solid var(--primary);
+            border: 2px solid #23304a;
             object-fit: cover;
+            display: block;
         }
 
-        .online-dot {
+        .acc-online-dot {
             position: absolute;
             bottom: -2px;
             right: -2px;
@@ -344,216 +412,499 @@
             height: 14px;
             border-radius: 50%;
             border: 2px solid var(--bg-card);
-            background: #10b981;
+            background: var(--accent-green);
         }
 
-        .offline-dot {
-            background: #ef4444;
+        .acc-offline-dot {
+            background: var(--accent-red);
         }
 
-        .player-info h3 {
-            font-size: 16px;
-            font-weight: 700;
-            color: #fff;
-        }
-
-        .player-info p {
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        .badge-status {
-            margin-left: auto;
-            font-size: 11px;
-            font-weight: 700;
-            padding: 5px 10px;
-            border-radius: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .status-online {
-            background: rgba(16, 185, 129, 0.2);
-            color: #34d399;
-            border: 1px solid #10b981;
-        }
-
-        .status-offline {
-            background: rgba(239, 68, 68, 0.15);
-            color: #f87171;
-            border: 1px solid #ef4444;
-        }
-
-        /* MAIN STAT TILES (MONEY & TREADMILL SPEED) */
-        .stats-hero {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .hero-tile {
-            background: #090d16;
-            border: 1px solid var(--border-color);
-            border-radius: 14px;
-            padding: 14px 16px;
+        .acc-info {
             display: flex;
             flex-direction: column;
             gap: 4px;
+            min-width: 170px;
         }
 
-        .hero-label {
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .acc-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
 
-        .hero-value {
-            font-size: 20px;
+        .acc-user-pill {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .acc-meta {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .acc-stats-cols {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 28px;
+        }
+
+        .stat-col {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            text-align: right;
+        }
+
+        .stat-col-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-dim);
+        }
+
+        .stat-col-val {
+            font-size: 15px;
             font-weight: 800;
             color: #fff;
         }
 
-        .val-money {
-            color: #34d399;
-            text-shadow: 0 0 12px rgba(52, 211, 153, 0.3);
+        .val-gold {
+            color: #fbbf24;
+            text-shadow: 0 0 10px rgba(251, 191, 36, 0.25);
         }
 
-        .val-speed {
+        .val-cyan {
             color: #38bdf8;
-            text-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
         }
 
-        /* INVENTORY SECTIONS */
-        .inv-section {
-            background: #090d16;
+        .val-summary {
+            font-size: 13px;
+            color: #e2e8f0;
+            font-weight: 600;
+        }
+
+        .acc-status-pill {
+            font-size: 11px;
+            font-weight: 800;
+            padding: 5px 11px;
+            border-radius: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: 10px;
+        }
+
+        .pill-online {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid #10b981;
+        }
+
+        .pill-offline {
+            background: rgba(239, 68, 68, 0.12);
+            color: #f87171;
+            border: 1px solid #ef4444;
+        }
+
+        .acc-arrow-btn {
+            background: #141c2e;
             border: 1px solid var(--border-color);
-            border-radius: 14px;
-            padding: 13px 15px;
+            color: var(--text-muted);
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            margin-left: 6px;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .account-row:hover .acc-arrow-btn {
+            background: var(--primary);
+            color: #07090e;
+            border-color: var(--primary);
+            transform: translateX(3px);
+        }
+
+        @media (max-width: 768px) {
+            .account-row {
+                flex-wrap: wrap;
+                gap: 14px;
+                padding: 14px 16px;
+            }
+            .acc-stats-cols {
+                margin-left: 0;
+                width: 100%;
+                justify-content: space-between;
+                border-top: 1px solid rgba(255, 255, 255, 0.05);
+                padding-top: 10px;
+                gap: 12px;
+            }
+            .stat-col {
+                text-align: left;
+            }
+            .acc-arrow-btn {
+                display: none;
+            }
+        }
+
+        /* ================= 2. VIEW: ACCOUNT DETAIL (ROCKHUB DETAIL VIEW) ================= */
+        #viewAccountDetail {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+            animation: fadeIn 0.2s ease;
+        }
+
+        /* DETAIL HERO HEADER */
+        .detail-hero {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 22px 24px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+            flex-wrap: wrap;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn-back {
+            background: #141c2e;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .btn-back:hover {
+            color: #fff;
+            border-color: var(--primary);
+            background: #1a253e;
+            transform: translateX(-2px);
+        }
+
+        .detail-avatar-wrap {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .detail-avatar {
+            width: 68px;
+            height: 68px;
+            border-radius: 18px;
+            background: #182238;
+            border: 2px solid var(--primary);
+            object-fit: cover;
+            display: block;
+        }
+
+        .detail-user-block {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 6px;
+            flex: 1;
+            min-width: 220px;
         }
 
-        .inv-header {
+        .detail-name-row {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
         }
 
-        .inv-title {
-            font-size: 13px;
+        .detail-display-name {
+            font-size: 22px;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .detail-username-pill {
+            background: #141c2e;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 3px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .detail-level-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .level-progress-track {
+            flex: 1;
+            max-width: 240px;
+            height: 6px;
+            background: #141c2e;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .level-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #a855f7, #ec4899);
+            border-radius: 6px;
+            width: 65%;
+        }
+
+        .detail-hero-actions {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .pill-autosync {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            padding: 6px 12px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .btn-refresh-icon {
+            background: #141c2e;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-refresh-icon:hover {
+            color: #fff;
+            border-color: var(--primary);
+            transform: rotate(90deg);
+        }
+
+        /* 4 STATS TILES */
+        .detail-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+        }
+
+        @media (max-width: 860px) {
+            .detail-stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .detail-stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .stat-card-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .stat-card-header {
+            font-size: 11px;
             font-weight: 700;
-            color: #e2e8f0;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             display: flex;
             align-items: center;
             gap: 6px;
         }
 
-        .inv-count-badge {
-            background: rgba(56, 189, 248, 0.12);
-            color: var(--primary);
+        .stat-card-val {
+            font-size: 22px;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .stat-card-sub {
             font-size: 11px;
-            font-weight: 700;
-            padding: 3px 9px;
-            border-radius: 8px;
-            border: 1px solid rgba(56, 189, 248, 0.25);
-            letter-spacing: 0.3px;
+            color: var(--text-dim);
         }
 
-        .items-chips {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            max-height: 165px;
-            overflow-y: auto;
-            overscroll-behavior: contain;
-            -webkit-overflow-scrolling: touch;
-            scroll-behavior: smooth;
-            padding: 4px 6px 6px 2px;
-            scrollbar-width: thin;
-            scrollbar-color: #334155 rgba(15, 20, 34, 0.6);
-        }
-
-        .items-chips::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .items-chips::-webkit-scrollbar-track {
-            background: rgba(15, 20, 34, 0.6);
-            border-radius: 6px;
-            margin: 2px 0;
-        }
-
-        .items-chips::-webkit-scrollbar-thumb {
-            background: #2d3c54;
-            border-radius: 6px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .items-chips::-webkit-scrollbar-thumb:hover {
-            background: #38bdf8;
-        }
-
-        .item-chip {
-            background: #111a2e;
-            border: 1px solid rgba(56, 189, 248, 0.18);
-            border-radius: 10px;
-            padding: 6px 10px;
-            font-size: 12px;
-            font-weight: 600;
-            color: #f1f5f9;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
-            transition: all 0.15s ease;
-            user-select: none;
-        }
-
-        .item-chip:hover {
-            border-color: rgba(56, 189, 248, 0.45);
-            background: #16223b;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
-        }
-
-        .chip-qty {
-            color: #fbbf24;
-            background: rgba(245, 158, 11, 0.15);
-            border: 1px solid rgba(245, 158, 11, 0.3);
-            border-radius: 6px;
-            padding: 2px 7px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.3px;
-            line-height: 1;
-        }
-
-        .chip-empty {
-            color: var(--text-muted);
-            font-size: 12px;
-            font-style: italic;
-            padding: 6px 0;
-        }
-
-        /* CARD FOOTER */
-        .card-bottom {
+        /* CATEGORY TABS & CONTROLS */
+        .category-nav-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 11px;
-            color: var(--text-muted);
-            border-top: 1px solid var(--border-color);
-            padding-top: 10px;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 6px;
         }
 
-        /* ================= LIVE STEAL FEED ================= */
-        .steal-view {
+        .category-tabs-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .cat-tab-btn {
+            background: #101626;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 9px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .cat-tab-btn:hover {
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.15);
+            background: #141c2e;
+        }
+
+        .cat-tab-btn.active {
+            background: var(--accent-pink);
+            color: #fff;
+            border-color: var(--accent-pink);
+            box-shadow: 0 4px 16px var(--accent-pink-glow);
+        }
+
+        .cat-badge {
+            background: rgba(0, 0, 0, 0.25);
+            padding: 2px 7px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .cat-tab-btn.active .cat-badge {
+            background: rgba(255, 255, 255, 0.25);
+            color: #fff;
+        }
+
+        /* INVENTORY GRID OF CARDS (ROCKHUB STYLE) */
+        .inventory-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 14px;
+            margin-top: 4px;
+        }
+
+        .item-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px 12px 14px 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            transition: all 0.2s ease;
+            user-select: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .item-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-3px);
+            background: var(--bg-card-hover);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px rgba(56, 189, 248, 0.15);
+        }
+
+        .item-card-qty {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(245, 158, 11, 0.16);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.32);
+            border-radius: 6px;
+            padding: 2px 6px;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .item-card-icon-wrap {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, rgba(13, 18, 31, 0) 70%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin: 6px 0 10px 0;
+            filter: drop-shadow(0 2px 8px rgba(56, 189, 248, 0.2));
+            transition: transform 0.2s;
+        }
+
+        .item-card:hover .item-card-icon-wrap {
+            transform: scale(1.1);
+        }
+
+        .item-card-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #f8fafc;
+            line-height: 1.35;
+            margin-bottom: 6px;
+            word-break: break-word;
+        }
+
+        .item-card-tag {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--primary);
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            border-radius: 6px;
+            padding: 2px 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        /* ================= 3. VIEW: LIVE STEAL FEED ================= */
+        #viewSteal {
             display: none;
         }
 
@@ -568,7 +919,7 @@
         .steal-card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: 14px;
+            border-radius: 16px;
             padding: 16px 20px;
             display: flex;
             align-items: center;
@@ -580,11 +931,6 @@
         .steal-card:hover {
             border-color: rgba(56, 189, 248, 0.4);
             transform: translateX(4px);
-        }
-
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
         }
 
         .steal-icon {
@@ -635,7 +981,6 @@
             white-space: nowrap;
         }
 
-        /* RARITY COLORS */
         .rarity-Common { background: rgba(148, 163, 184, 0.2); color: #94a3b8; border: 1px solid #64748b; }
         .rarity-Uncommon { background: rgba(52, 211, 153, 0.2); color: #34d399; border: 1px solid #10b981; }
         .rarity-Rare { background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid #0284c7; }
@@ -645,11 +990,11 @@
         .rarity-Secret { background: rgba(6, 182, 212, 0.2); color: #22d3ee; border: 1px solid #0891b2; box-shadow: 0 0 10px rgba(6, 182, 212, 0.3); }
         .rarity-Divine { background: rgba(250, 204, 21, 0.25); color: #fde047; border: 1px solid #eab308; box-shadow: 0 0 12px rgba(250, 204, 21, 0.4); }
 
-        /* EMPTY STATE */
+        /* EMPTY STATES */
         .empty-box {
             grid-column: 1 / -1;
             text-align: center;
-            padding: 80px 20px;
+            padding: 60px 20px;
             color: var(--text-muted);
             background: var(--bg-card);
             border: 1px dashed var(--border-color);
@@ -657,15 +1002,29 @@
         }
 
         .empty-box h3 {
-            font-size: 18px;
+            font-size: 16px;
             color: #fff;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
+        }
+
+        .empty-box p {
+            font-size: 13px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body>
 
-    <!-- ================= 1. PIN LOCK SCREEN ================= -->
+    <!-- 1. PIN LOCK SCREEN -->
     <div id="pinScreen">
         <div class="pin-box">
             <span class="pin-logo">🥚</span>
@@ -680,11 +1039,11 @@
         </div>
     </div>
 
-    <!-- ================= 2. DASHBOARD SCREEN ================= -->
+    <!-- 2. DASHBOARD SCREEN -->
     <div id="dashboardScreen">
         <!-- TOP NAVBAR -->
         <header class="navbar">
-            <div class="nav-brand">
+            <div class="nav-brand" onclick="goToAccountsList()">
                 <span class="brand-icon">🥚</span>
                 <div class="brand-text">
                     <h1>P4kong x SysHub</h1>
@@ -703,44 +1062,148 @@
             </div>
         </header>
 
-        <!-- MAIN CONTENT CONTAINER -->
         <main class="container">
-            <!-- TABS -->
-            <div class="tab-bar">
-                <button class="tab-btn active" id="tabAccountsBtn" onclick="switchView('accounts')">
-                    📊 Daftar Akun Terhubung (<span id="tabCount">0</span>)
+            <!-- BREADCRUMB -->
+            <div class="breadcrumb" id="breadcrumbNav">
+                <span>Monitoring</span>
+                <span class="sep">&gt;</span>
+                <a onclick="goToAccountsList()">Steal An Egg</a>
+                <span class="sep">&gt;</span>
+                <span class="current" id="breadcrumbCurrent">Akun Joki</span>
+            </div>
+
+            <!-- MAIN TOP TABS -->
+            <div class="main-nav-tabs">
+                <button class="main-tab-btn active" id="tabAccountsBtn" onclick="switchMainTab('accounts')">
+                    👥 Akun Joki (<span id="tabCount">0</span>)
                 </button>
-                <button class="tab-btn" id="tabStealBtn" onclick="switchView('steal')">
+                <button class="main-tab-btn" id="tabStealBtn" onclick="switchMainTab('steal')">
                     🕵️ Log Telur Dicuri (<span id="tabStealCount">0</span>)
                 </button>
             </div>
 
-            <!-- VIEW 1: ACCOUNTS GRID -->
-            <div id="viewAccounts" class="accounts-grid">
-                <div class="empty-box">
-                    <h3>Memuat data monitoring...</h3>
-                    <p>Menghubungkan ke server monitoring joki...</p>
+            <!-- ================= VIEW 1: DAFTAR AKUN (LIST VIEW) ================= -->
+            <div id="viewAccounts">
+                <div class="list-controls">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="accountSearchInput" class="search-input" placeholder="Cari nama atau username..." oninput="handleAccountSearch()">
+                    </div>
+                </div>
+
+                <div id="accountsListContainer">
+                    <!-- Account rows rendered here -->
                 </div>
             </div>
 
-            <!-- VIEW 2: STEAL LOG FEED -->
-            <div id="viewSteal" class="steal-view">
-                <div class="steal-grid" id="stealGrid">
-                    <div class="empty-box">
-                        <h3>Belum Ada Telur Dicuri</h3>
-                        <p>Notifikasi realtime akan muncul saat akun mencuri telur di game.</p>
+            <!-- ================= VIEW 2: DETAIL INVENTORY AKUN (ROCKHUB DETAIL VIEW) ================= -->
+            <div id="viewAccountDetail">
+                <!-- HERO HEADER -->
+                <div class="detail-hero">
+                    <button class="btn-back" onclick="goToAccountsList()" title="Kembali ke Daftar Akun">
+                        ←
+                    </button>
+
+                    <div class="detail-avatar-wrap">
+                        <img id="detailAvatar" src="" class="detail-avatar" alt="Avatar">
+                        <div id="detailOnlineDot" class="acc-online-dot"></div>
                     </div>
+
+                    <div class="detail-user-block">
+                        <div class="detail-name-row">
+                            <span class="detail-display-name" id="detailDisplayName">-</span>
+                            <span class="detail-username-pill mono" id="detailUsername">@-</span>
+                            <span id="detailStatusBadge" class="acc-status-pill pill-online">ONLINE</span>
+                        </div>
+                        <div class="detail-level-bar-wrap">
+                            <span id="detailLevelText" class="mono">LVL 1</span>
+                            <div class="level-progress-track">
+                                <div class="level-progress-fill"></div>
+                            </div>
+                            <span id="detailUptimeText" class="mono">00:00:00</span>
+                        </div>
+                    </div>
+
+                    <div class="detail-hero-actions">
+                        <span class="pill-autosync mono">AUTO SYNC: 5S</span>
+                        <button class="btn-refresh-icon" onclick="fetchDashboardData()" title="Segarkan Data Sekarang">
+                            ↻
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 4 METRIC TILES -->
+                <div class="detail-stats-grid">
+                    <div class="stat-card-box">
+                        <span class="stat-card-header">💰 Money Sekarang</span>
+                        <span class="stat-card-val val-gold mono" id="detailMoney">$0</span>
+                        <span class="stat-card-sub">Saldo terkini dalam game</span>
+                    </div>
+
+                    <div class="stat-card-box">
+                        <span class="stat-card-header">⚡ Treadmill / Speed</span>
+                        <span class="stat-card-val val-cyan mono" id="detailSpeed">0</span>
+                        <span class="stat-card-sub">Kecepatan treadmill karakter</span>
+                    </div>
+
+                    <div class="stat-card-box">
+                        <span class="stat-card-header">🏡 Pet di Kandang</span>
+                        <span class="stat-card-val mono" id="detailKandangCount">0 / 19</span>
+                        <span class="stat-card-sub">Pet aktif menghasilkan uang</span>
+                    </div>
+
+                    <div class="stat-card-box">
+                        <span class="stat-card-header">⏳ Sesi Monitoring</span>
+                        <span class="stat-card-val mono" id="detailUptimeVal">00:00:00</span>
+                        <span class="stat-card-sub" id="detailPingVal">Ping: N/A</span>
+                    </div>
+                </div>
+
+                <!-- CATEGORY NAVIGATION & ITEM SEARCH -->
+                <div class="category-nav-bar">
+                    <div class="category-tabs-group">
+                        <button class="cat-tab-btn active" id="catBtnEggs" onclick="switchCategory('eggs')">
+                            🎒 Telur di Backpack <span class="cat-badge mono" id="catBadgeEggs">0</span>
+                        </button>
+                        <button class="cat-tab-btn" id="catBtnPetsBp" onclick="switchCategory('pets_bp')">
+                            🐾 Pet di Backpack <span class="cat-badge mono" id="catBadgePetsBp">0</span>
+                        </button>
+                        <button class="cat-tab-btn" id="catBtnPetsActive" onclick="switchCategory('pets_active')">
+                            🏡 Pet di Kandang <span class="cat-badge mono" id="catBadgePetsActive">0</span>
+                        </button>
+                    </div>
+
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="itemSearchInput" class="search-input" placeholder="Cari item..." oninput="handleItemSearch()">
+                    </div>
+                </div>
+
+                <!-- INVENTORY ITEMS GRID -->
+                <div class="inventory-cards-grid" id="detailItemsGrid">
+                    <!-- Cards rendered here -->
+                </div>
+            </div>
+
+            <!-- ================= VIEW 3: LIVE STEAL FEED ================= -->
+            <div id="viewSteal">
+                <div class="steal-grid" id="stealGrid">
+                    <!-- Steal cards rendered here -->
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- SCRIPT LOGIC -->
     <script>
         const PIN_KEY = "p4kong_joki_pin";
-        let activeView = 'accounts';
+        let activeMainTab = 'accounts'; // 'accounts' or 'steal'
+        let currentDetailUsername = null; // null if on list view
+        let activeCategory = 'eggs'; // 'eggs', 'pets_bp', 'pets_active'
+        let cachedAccounts = [];
+        let cachedSteals = [];
+        let itemSearchQuery = '';
+        let accountSearchQuery = '';
 
-        // Cek login PIN saat halaman pertama dimuat
         document.addEventListener('DOMContentLoaded', () => {
             const savedPin = localStorage.getItem(PIN_KEY);
             if (savedPin) {
@@ -757,10 +1220,10 @@
         async function verifyPinWithServer(pin, showError) {
             const errEl = document.getElementById('pinError');
             try {
-                const res = await fetch('/api/verify-pin', {
+                const res = await fetch('/api/monitoringjoki', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ pin })
+                    body: JSON.stringify({ action: 'verify_pin', pin })
                 });
 
                 const data = await res.json();
@@ -787,183 +1250,309 @@
             document.getElementById('dashboardScreen').style.display = 'none';
         }
 
-        function switchView(viewName) {
-            activeView = viewName;
+        function startDataPolling() {
+            fetchDashboardData();
+            setInterval(fetchDashboardData, 5000);
+        }
+
+        function switchMainTab(tab) {
+            activeMainTab = tab;
             const tabAcc = document.getElementById('tabAccountsBtn');
             const tabStl = document.getElementById('tabStealBtn');
             const viewAcc = document.getElementById('viewAccounts');
+            const viewDetail = document.getElementById('viewAccountDetail');
             const viewStl = document.getElementById('viewSteal');
+            const breadcrumbCurrent = document.getElementById('breadcrumbCurrent');
 
-            if (viewName === 'accounts') {
+            if (tab === 'accounts') {
                 tabAcc.classList.add('active');
                 tabStl.classList.remove('active');
-                viewAcc.style.display = 'grid';
                 viewStl.style.display = 'none';
+                if (currentDetailUsername) {
+                    viewAcc.style.display = 'none';
+                    viewDetail.style.display = 'flex';
+                    breadcrumbCurrent.innerText = currentDetailUsername;
+                } else {
+                    viewAcc.style.display = 'flex';
+                    viewDetail.style.display = 'none';
+                    breadcrumbCurrent.innerText = 'Akun Joki';
+                }
             } else {
                 tabAcc.classList.remove('active');
                 tabStl.classList.add('active');
                 viewAcc.style.display = 'none';
+                viewDetail.style.display = 'none';
                 viewStl.style.display = 'block';
+                breadcrumbCurrent.innerText = 'Log Telur Dicuri';
             }
         }
 
-        // ================= DATA FETCHING =================
-        async function fetchAccounts() {
+        function goToAccountsList() {
+            currentDetailUsername = null;
+            switchMainTab('accounts');
+            renderAccountsList(cachedAccounts);
+        }
+
+        function openAccountDetail(username) {
+            currentDetailUsername = username;
+            document.getElementById('itemSearchInput').value = '';
+            itemSearchQuery = '';
+            activeCategory = 'eggs';
+            switchMainTab('accounts');
+            updateDetailView();
+        }
+
+        function switchCategory(cat) {
+            activeCategory = cat;
+            document.querySelectorAll('.cat-tab-btn').forEach(btn => btn.classList.remove('active'));
+            if (cat === 'eggs') document.getElementById('catBtnEggs').classList.add('active');
+            if (cat === 'pets_bp') document.getElementById('catBtnPetsBp').classList.add('active');
+            if (cat === 'pets_active') document.getElementById('catBtnPetsActive').classList.add('active');
+            renderDetailItems();
+        }
+
+        function handleItemSearch() {
+            itemSearchQuery = document.getElementById('itemSearchInput').value.trim().toLowerCase();
+            renderDetailItems();
+        }
+
+        function handleAccountSearch() {
+            accountSearchQuery = document.getElementById('accountSearchInput').value.trim().toLowerCase();
+            renderAccountsList(cachedAccounts);
+        }
+
+        // ================= DATA FETCHING (PRESERVING SCROLL POSITION) =================
+        async function fetchDashboardData() {
             try {
-                const res = await fetch('/api/accounts');
-                const accounts = await res.json();
-                renderAccounts(accounts);
+                const res = await fetch('/api/monitoringjoki');
+                const data = await res.json();
+                if (data.success) {
+                    cachedAccounts = data.accounts || [];
+                    cachedSteals = data.stealEvents || [];
+
+                    // Update Top Stats
+                    const onlineCount = cachedAccounts.filter(a => a.isOnline).length;
+                    document.getElementById('accountCountBadge').innerText = `${onlineCount} / ${cachedAccounts.length} Akun Online`;
+                    document.getElementById('tabCount').innerText = cachedAccounts.length;
+                    document.getElementById('tabStealCount').innerText = cachedSteals.length;
+
+                    // If viewing account detail, update detail smoothly without scroll reset
+                    if (currentDetailUsername) {
+                        updateDetailView();
+                    } else {
+                        // Preserving list scroll
+                        const currentScroll = window.scrollY;
+                        renderAccountsList(cachedAccounts);
+                        window.scrollTo(0, currentScroll);
+                    }
+
+                    renderStealEvents(cachedSteals);
+                }
             } catch (err) {
-                console.error("Fetch accounts error:", err);
+                console.error("Fetch dashboard error:", err);
             }
         }
 
-        async function fetchStealEvents() {
-            try {
-                const res = await fetch('/api/steal-events');
-                const events = await res.json();
-                renderStealEvents(events);
-            } catch (err) {
-                console.error("Fetch steal events error:", err);
-            }
-        }
-
-        function formatRelativeTime(seconds) {
-            if (seconds < 60) return `${seconds} dtk lalu`;
-            if (seconds < 3600) return `${Math.floor(seconds / 60)} mnt lalu`;
-            return `${Math.floor(seconds / 3600)} jam lalu`;
-        }
-
-        function renderChips(itemsObj) {
-            if (!itemsObj || typeof itemsObj !== 'object') {
-                return '<span class="chip-empty">Kosong</span>';
-            }
-            const badPrefixes = ['bring ', 'place ', 'charge ', 'open ', 'steal ', 'hold ', 'click ', 'press ', 'tap ', 'your '];
-            const entries = Object.entries(itemsObj).filter(([name, _]) => {
-                const low = String(name || '').toLowerCase().trim();
-                if (low === 'egg' || low === 'eggs') return false;
-                if (/^\d+$/.test(low)) return false;
-                if (badPrefixes.some(p => low.startsWith(p))) return false;
-                if (low.includes('infested') || low.includes('altar') || low.includes('machine')) return false;
-                return true;
-            });
-
-            if (entries.length === 0) {
-                return '<span class="chip-empty">Kosong</span>';
+        // ================= 1. RENDER DAFTAR AKUN (LIST VIEW) =================
+        function renderAccountsList(accounts) {
+            const container = document.getElementById('accountsListContainer');
+            
+            let filtered = accounts;
+            if (accountSearchQuery) {
+                filtered = accounts.filter(a => 
+                    (a.displayName || '').toLowerCase().includes(accountSearchQuery) ||
+                    (a.username || '').toLowerCase().includes(accountSearchQuery)
+                );
             }
 
-            // Urutkan berdasarkan jumlah terbanyak ke paling sedikit
-            entries.sort((a, b) => (Number(b[1]) || 0) - (Number(a[1]) || 0));
-
-            return entries.map(([name, count]) => `
-                <div class="item-chip">
-                    <span>${name}</span>
-                    <span class="chip-qty mono">x${count}</span>
-                </div>
-            `).join('');
-        }
-
-        function renderAccounts(accounts) {
-            const grid = document.getElementById('viewAccounts');
-            const countBadge = document.getElementById('accountCountBadge');
-            const tabCount = document.getElementById('tabCount');
-
-            const onlineCount = accounts.filter(a => a.isOnline).length;
-            countBadge.innerText = `${onlineCount} / ${accounts.length} Akun Online`;
-            tabCount.innerText = accounts.length;
-
-            if (accounts.length === 0) {
-                grid.innerHTML = `
+            if (filtered.length === 0) {
+                container.innerHTML = `
                     <div class="empty-box">
-                        <h3>Belum Ada Akun Terhubung</h3>
-                        <p>Jalankan script di executor Roblox dan aktifkan tombol <b>Monitoring Web</b>.</p>
+                        <h3>${accounts.length === 0 ? 'Belum Ada Akun Terhubung' : 'Tidak Ditemukan'}</h3>
+                        <p>${accounts.length === 0 ? 'Jalankan script di executor Roblox dan aktifkan Monitoring Web.' : 'Tidak ada akun yang sesuai dengan pencarian.'}</p>
                     </div>
                 `;
                 return;
             }
 
-            grid.innerHTML = accounts.map(acc => {
+            container.innerHTML = filtered.map(acc => {
                 const avatar = `https://www.roblox.com/headshot-thumbnail/image?userId=${acc.userId}&width=150&height=150&format=png`;
-                const statusClass = acc.isOnline ? 'status-online' : 'status-offline';
-                const statusText = acc.isOnline ? '🟢 ONLINE' : '🔴 OFFLINE';
-                const dotClass = acc.isOnline ? 'online-dot' : 'online-dot offline-dot';
+                const dotClass = acc.isOnline ? 'acc-online-dot' : 'acc-online-dot acc-offline-dot';
+                const statusPill = acc.isOnline 
+                    ? '<span class="acc-status-pill pill-online">ONLINE</span>' 
+                    : '<span class="acc-status-pill pill-offline">OFFLINE</span>';
+
+                const eggCount = acc.eggBackpackCount || 0;
+                const petBpCount = acc.petBackpackCount || 0;
+                const petActiveCount = acc.petKandangCount || 0;
 
                 return `
-                    <div class="account-card">
-                        <!-- TOP: PLAYER INFO -->
-                        <div class="card-top">
-                            <div class="avatar-wrap">
-                                <img src="${avatar}" class="player-avatar" alt="Avatar" onerror="this.src='https://tr.rbxcdn.com/53eb9b17fe1432a809c73a13889b5006/150/150/AvatarHeadshot/Png'">
-                                <div class="${dotClass}"></div>
-                            </div>
-                            <div class="player-info">
-                                <h3>${acc.displayName}</h3>
-                                <p>@${acc.username}</p>
-                            </div>
-                            <span class="badge-status ${statusClass}">${statusText}</span>
+                    <div class="account-row" onclick="openAccountDetail('${acc.username}')">
+                        <div class="acc-avatar-wrap">
+                            <img src="${avatar}" class="acc-avatar" alt="Avatar" onerror="this.src='https://tr.rbxcdn.com/53eb9b17fe1432a809c73a13889b5006/150/150/AvatarHeadshot/Png'">
+                            <div class="${dotClass}"></div>
                         </div>
 
-                        <!-- HERO STATS: MONEY & SPEED / TREADMILL -->
-                        <div class="stats-hero">
-                            <div class="hero-tile">
-                                <span class="hero-label">💰 Money Sekarang</span>
-                                <span class="hero-value val-money mono">${acc.money || '$0'}</span>
-                            </div>
-                            <div class="hero-tile">
-                                <span class="hero-label">⚡ Treadmill / Speed</span>
-                                <span class="hero-value val-speed mono">${acc.speed || '0'}</span>
-                            </div>
+                        <div class="acc-info">
+                            <span class="acc-name">${acc.displayName}</span>
+                            <span class="acc-user-pill mono">@${acc.username}</span>
+                            <span class="acc-meta">⏳ ${acc.uptime || 'N/A'} • 📶 ${acc.ping || 'N/A'}</span>
                         </div>
 
-                        <!-- PET DI KANDANG (ACTIVE) -->
-                        <div class="inv-section">
-                            <div class="inv-header">
-                                <span class="inv-title">🏡 Pet di Kandang (Active)</span>
-                                <span class="inv-count-badge mono">${acc.petKandangCount || 0} Pet</span>
+                        <div class="acc-stats-cols">
+                            <div class="stat-col">
+                                <span class="stat-col-label">💰 Money</span>
+                                <span class="stat-col-val val-gold mono">${acc.money || '$0'}</span>
                             </div>
-                            <div class="items-chips">
-                                ${renderChips(acc.petsInKandang)}
-                            </div>
-                        </div>
 
-                        <!-- TELUR DI BACKPACK -->
-                        <div class="inv-section">
-                            <div class="inv-header">
-                                <span class="inv-title">🎒 Telur di Backpack</span>
-                                <span class="inv-count-badge mono">${acc.eggBackpackCount || 0} Telur</span>
+                            <div class="stat-col">
+                                <span class="stat-col-label">⚡ Speed</span>
+                                <span class="stat-col-val val-cyan mono">${acc.speed || '0'}</span>
                             </div>
-                            <div class="items-chips">
-                                ${renderChips(acc.eggsInBackpack)}
-                            </div>
-                        </div>
 
-                        <!-- PET DI BACKPACK -->
-                        <div class="inv-section">
-                            <div class="inv-header">
-                                <span class="inv-title">🐾 Pet di Backpack</span>
-                                <span class="inv-count-badge mono">${acc.petBackpackCount || 0} Pet</span>
+                            <div class="stat-col">
+                                <span class="stat-col-label">🎒 Backpack</span>
+                                <span class="stat-col-val val-summary mono">${eggCount} Telur • ${petBpCount} Pet</span>
                             </div>
-                            <div class="items-chips">
-                                ${renderChips(acc.petsInBackpack)}
-                            </div>
-                        </div>
 
-                        <!-- FOOTER INFO -->
-                        <div class="card-bottom">
-                            <span>⏳ Durasi: ${acc.uptime || 'N/A'}</span>
-                            <span>📶 Ping: ${acc.ping || 'N/A'}</span>
-                            <span>🕒 ${formatRelativeTime(acc.lastSeenAgo)}</span>
+                            <div class="stat-col">
+                                <span class="stat-col-label">🏡 Kandang</span>
+                                <span class="stat-col-val val-summary mono">${petActiveCount}/19</span>
+                            </div>
+
+                            ${statusPill}
+                            <div class="acc-arrow-btn">➔</div>
                         </div>
                     </div>
                 `;
             }).join('');
         }
 
+        // ================= 2. RENDER DETAIL AKUN (ROCKHUB DETAIL VIEW) =================
+        function updateDetailView() {
+            const acc = cachedAccounts.find(a => a.username === currentDetailUsername);
+            if (!acc) return;
+
+            document.getElementById('breadcrumbCurrent').innerText = acc.displayName;
+
+            // Avatar & Info
+            const avatar = `https://www.roblox.com/headshot-thumbnail/image?userId=${acc.userId}&width=150&height=150&format=png`;
+            const avatarEl = document.getElementById('detailAvatar');
+            if (avatarEl.src !== avatar) avatarEl.src = avatar;
+
+            const dot = document.getElementById('detailOnlineDot');
+            dot.className = acc.isOnline ? 'acc-online-dot' : 'acc-online-dot acc-offline-dot';
+
+            document.getElementById('detailDisplayName').innerText = acc.displayName;
+            document.getElementById('detailUsername').innerText = `@${acc.username}`;
+            document.getElementById('detailLevelText').innerText = acc.level || 'LVL 1';
+            document.getElementById('detailUptimeText').innerText = `⏳ ${acc.uptime || '00:00:00'}`;
+
+            const badge = document.getElementById('detailStatusBadge');
+            badge.className = acc.isOnline ? 'acc-status-pill pill-online' : 'acc-status-pill pill-offline';
+            badge.innerText = acc.isOnline ? 'ONLINE' : 'OFFLINE';
+
+            // Metrics
+            document.getElementById('detailMoney').innerText = acc.money || '$0';
+            document.getElementById('detailSpeed').innerText = acc.speed || '0';
+            document.getElementById('detailKandangCount').innerText = `${acc.petKandangCount || 0} / 19`;
+            document.getElementById('detailUptimeVal').innerText = acc.uptime || '00:00:00';
+            document.getElementById('detailPingVal').innerText = `📶 Ping: ${acc.ping || 'N/A'} • ${formatRelativeTime(acc.lastSeenAgo)}`;
+
+            // Badges Count
+            const eggsCount = acc.eggBackpackCount || countObj(acc.eggsInBackpack);
+            const petsBpCount = acc.petBackpackCount || countObj(acc.petsInBackpack);
+            const petsActiveCount = acc.petKandangCount || countObj(acc.petsInKandang);
+
+            document.getElementById('catBadgeEggs').innerText = eggsCount;
+            document.getElementById('catBadgePetsBp').innerText = petsBpCount;
+            document.getElementById('catBadgePetsActive').innerText = petsActiveCount;
+
+            renderDetailItems();
+        }
+
+        function countObj(obj) {
+            if (!obj || typeof obj !== 'object') return 0;
+            let sum = 0;
+            for (const c of Object.values(obj)) sum += Number(c) || 0;
+            return sum;
+        }
+
+        // Sanitasi kata terlarang (prompt/aksi)
+        function isValidInventoryName(name) {
+            const low = String(name || '').toLowerCase().trim();
+            if (low === 'egg' || low === 'eggs') return false;
+            if (/^\d+$/.test(low)) return false;
+            const badPrefixes = ['bring ', 'place ', 'charge ', 'open ', 'steal ', 'hold ', 'click ', 'press ', 'tap ', 'your '];
+            if (badPrefixes.some(p => low.startsWith(p))) return false;
+            if (low.includes('infested') || low.includes('altar') || low.includes('machine')) return false;
+            return true;
+        }
+
+        // Render Cards Grid (with scroll position preservation)
+        function renderDetailItems() {
+            const grid = document.getElementById('detailItemsGrid');
+            const acc = cachedAccounts.find(a => a.username === currentDetailUsername);
+            if (!acc) return;
+
+            let sourceObj = {};
+            let iconEmoji = '🥚';
+            let tagText = 'Telur';
+
+            if (activeCategory === 'eggs') {
+                sourceObj = acc.eggsInBackpack || {};
+                iconEmoji = '🥚';
+                tagText = 'Egg';
+            } else if (activeCategory === 'pets_bp') {
+                sourceObj = acc.petsInBackpack || {};
+                iconEmoji = '🐾';
+                tagText = 'Pet Backpack';
+            } else if (activeCategory === 'pets_active') {
+                sourceObj = acc.petsInKandang || {};
+                iconEmoji = '🏡';
+                tagText = 'Pet Aktif';
+            }
+
+            // Filter & Sort
+            let entries = Object.entries(sourceObj).filter(([name, _]) => isValidInventoryName(name));
+            
+            if (itemSearchQuery) {
+                entries = entries.filter(([name, _]) => name.toLowerCase().includes(itemSearchQuery));
+            }
+
+            // Urutkan dari jumlah terbanyak
+            entries.sort((a, b) => (Number(b[1]) || 0) - (Number(a[1]) || 0));
+
+            // Simpan scroll sebelum update
+            const prevScroll = window.scrollY;
+
+            if (entries.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-box">
+                        <h3>Tidak Ada Item</h3>
+                        <p>${itemSearchQuery ? 'Tidak ada item yang cocok dengan pencarian.' : 'Kategori ini masih kosong.'}</p>
+                    </div>
+                `;
+            } else {
+                grid.innerHTML = entries.map(([name, count]) => `
+                    <div class="item-card">
+                        <span class="item-card-qty mono">x${count}</span>
+                        <div class="item-card-icon-wrap">
+                            <span>${iconEmoji}</span>
+                        </div>
+                        <span class="item-card-name">${name}</span>
+                        <span class="item-card-tag">${tagText}</span>
+                    </div>
+                `).join('');
+            }
+
+            // Kembalikan posisi scroll jika pengguna sedang berada di halaman detail
+            window.scrollTo(0, prevScroll);
+        }
+
+        // ================= 3. RENDER LIVE STEAL FEED =================
         function renderStealEvents(events) {
             const grid = document.getElementById('stealGrid');
-            const tabStealCount = document.getElementById('tabStealCount');
-            tabStealCount.innerText = events.length;
-
             if (events.length === 0) {
                 grid.innerHTML = `
                     <div class="empty-box">
@@ -1001,13 +1590,11 @@
             }).join('');
         }
 
-        function startDataPolling() {
-            fetchAccounts();
-            fetchStealEvents();
-            setInterval(() => {
-                fetchAccounts();
-                fetchStealEvents();
-            }, 3000); // Auto-sync setiap 3 detik
+        function formatRelativeTime(seconds) {
+            if (seconds == null || isNaN(seconds)) return 'N/A';
+            if (seconds < 60) return `${seconds} dtk lalu`;
+            if (seconds < 3600) return `${Math.floor(seconds / 60)} mnt lalu`;
+            return `${Math.floor(seconds / 3600)} jam lalu`;
         }
     </script>
 </body>
