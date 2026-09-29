@@ -1708,6 +1708,16 @@ TabPredict:Button({
     end
 })
 
+-- Auto-refresh tampilan Predictor in-game setiap 15 detik
+task.spawn(function()
+    task.wait(6)
+    pcall(refreshPredictorUI)
+    while task.wait(15) do
+        pcall(refreshPredictorUI)
+    end
+end)
+
+
 -- ====================================================================
 -- 🌀 BACKGROUND LISTENERS (REALTIME EGG DETECTOR & AUTO REPORT)
 -- ====================================================================
