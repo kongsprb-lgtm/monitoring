@@ -860,6 +860,7 @@
             font-weight: 800;
         }
         .rarity-filter-btn.btn-divine.active { background: #fde047; color: #171100; border-color: #fde047; box-shadow: 0 0 12px rgba(253, 224, 71, 0.4); }
+        .rarity-filter-btn.btn-eternal.active { background: #d946ef; color: #fff; border-color: #d946ef; box-shadow: 0 0 12px rgba(217, 70, 239, 0.4); }
         .rarity-filter-btn.btn-secret.active { background: #22d3ee; color: #032029; border-color: #22d3ee; box-shadow: 0 0 12px rgba(34, 211, 238, 0.4); }
         .rarity-filter-btn.btn-mythic.active { background: #f87171; color: #fff; border-color: #f87171; box-shadow: 0 0 12px rgba(248, 113, 113, 0.4); }
         .rarity-filter-btn.btn-legendary.active { background: #fbbf24; color: #1c1100; border-color: #fbbf24; box-shadow: 0 0 12px rgba(251, 191, 36, 0.4); }
@@ -875,6 +876,7 @@
             display: inline-block;
         }
         .dot-divine { background: #fde047; box-shadow: 0 0 6px #fde047; }
+        .dot-eternal { background: #d946ef; box-shadow: 0 0 6px #d946ef; }
         .dot-secret { background: #22d3ee; box-shadow: 0 0 6px #22d3ee; }
         .dot-mythic { background: #f87171; box-shadow: 0 0 6px #f87171; }
         .dot-legendary { background: #fbbf24; box-shadow: 0 0 6px #fbbf24; }
@@ -908,6 +910,7 @@
         }
 
         .card-Divine { border-color: rgba(250, 204, 21, 0.35); }
+        .card-Eternal { border-color: rgba(217, 70, 239, 0.35); }
         .card-Secret { border-color: rgba(34, 211, 238, 0.35); }
         .card-Mythic { border-color: rgba(248, 113, 113, 0.35); }
         .card-Legendary { border-color: rgba(251, 191, 36, 0.3); }
@@ -921,6 +924,7 @@
             background: var(--bg-card-hover);
         }
         .card-Divine:hover { border-color: #fde047; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 20px rgba(250, 204, 21, 0.35); }
+        .card-Eternal:hover { border-color: #d946ef; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 20px rgba(217, 70, 239, 0.35); }
         .card-Secret:hover { border-color: #22d3ee; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 20px rgba(34, 211, 238, 0.35); }
         .card-Mythic:hover { border-color: #f87171; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 20px rgba(248, 113, 113, 0.35); }
         .card-Legendary:hover { border-color: #fbbf24; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 20px rgba(251, 191, 36, 0.3); }
@@ -980,6 +984,7 @@
             background: #64748b;
         }
         .rarity-bar-Divine { background: #fde047; box-shadow: 0 0 10px #fde047; }
+        .rarity-bar-Eternal { background: #d946ef; box-shadow: 0 0 10px #d946ef; }
         .rarity-bar-Secret { background: #22d3ee; box-shadow: 0 0 10px #22d3ee; }
         .rarity-bar-Mythic { background: #f87171; box-shadow: 0 0 10px #f87171; }
         .rarity-bar-Legendary { background: #fbbf24; box-shadow: 0 0 10px #fbbf24; }
@@ -1087,7 +1092,223 @@
         .rarity-Legendary { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #d97706; }
         .rarity-Mythic { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #dc2626; }
         .rarity-Secret { background: rgba(6, 182, 212, 0.2); color: #22d3ee; border: 1px solid #0891b2; box-shadow: 0 0 10px rgba(6, 182, 212, 0.3); }
+        .rarity-Eternal { background: rgba(217, 70, 239, 0.25); color: #f0abfc; border: 1px solid #d946ef; box-shadow: 0 0 10px rgba(217, 70, 239, 0.4); }
         .rarity-Divine { background: rgba(250, 204, 21, 0.25); color: #fde047; border: 1px solid #eab308; box-shadow: 0 0 12px rgba(250, 204, 21, 0.4); }
+
+        /* ================= 4. VIEW: LIVE PREDICTOR ================= */
+        #viewPredictor {
+            display: none;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .predictor-hero {
+            background: linear-gradient(135deg, rgba(30, 27, 75, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 20px;
+            padding: 22px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .predictor-hero::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 180px;
+            height: 180px;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.25) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .predictor-hero-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .predictor-orb-icon {
+            font-size: 38px;
+            filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.6));
+            animation: orbFloat 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes orbFloat {
+            0% { transform: translateY(0px) scale(1); }
+            100% { transform: translateY(-4px) scale(1.05); }
+        }
+
+        .predictor-hero-text h2 {
+            font-size: 20px;
+            font-weight: 800;
+            color: #fff;
+            background: linear-gradient(90deg, #f0abfc, #a855f7, #38bdf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 4px;
+        }
+
+        .predictor-hero-text p {
+            font-size: 12px;
+            color: var(--text-muted);
+            max-width: 580px;
+            line-height: 1.4;
+        }
+
+        .predictor-hero-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .badge-predictor-live {
+            background: rgba(168, 85, 247, 0.15);
+            color: #c084fc;
+            border: 1px solid rgba(168, 85, 247, 0.35);
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .predict-controls-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .predict-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 16px;
+        }
+
+        .predict-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 18px 16px 16px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .predict-card:hover {
+            transform: translateY(-4px);
+            background: var(--bg-card-hover);
+        }
+
+        .predict-badges-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 8px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .predict-area-badge {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        .predict-phase-badge {
+            background: rgba(56, 189, 248, 0.12);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        .phase-night {
+            background: rgba(168, 85, 247, 0.15);
+            color: #c084fc;
+            border-color: rgba(168, 85, 247, 0.3);
+        }
+
+        .predict-egg-name {
+            font-size: 15px;
+            font-weight: 800;
+            color: #fff;
+            margin: 8px 0 6px 0;
+            line-height: 1.3;
+            min-height: 38px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .predict-countdown-box {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 10px 8px;
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .predict-countdown-text {
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        .countdown-imminent {
+            color: #fde047;
+            text-shadow: 0 0 10px rgba(253, 224, 71, 0.5);
+            animation: pulseText 1.5s infinite;
+        }
+
+        .countdown-spawning {
+            color: #4ade80;
+            text-shadow: 0 0 10px rgba(74, 222, 128, 0.6);
+            animation: pulseText 1s infinite;
+        }
+
+        .countdown-future {
+            color: #38bdf8;
+        }
+
+        .countdown-passed {
+            color: #64748b;
+        }
+
+        @keyframes pulseText {
+            0% { opacity: 0.75; transform: scale(0.99); }
+            50% { opacity: 1; transform: scale(1.02); }
+            100% { opacity: 0.75; transform: scale(0.99); }
+        }
+
+        .predict-time-sub {
+            font-size: 11px;
+            color: var(--text-dim);
+        }
 
         /* EMPTY STATES */
         .empty-box {
@@ -1178,6 +1399,9 @@
                 </button>
                 <button class="main-tab-btn" id="tabStealBtn" onclick="switchMainTab('steal')">
                     🕵️ Log Telur Dicuri (<span id="tabStealCount">0</span>)
+                </button>
+                <button class="main-tab-btn" id="tabPredictBtn" onclick="switchMainTab('predict')">
+                    🔮 Live Predictor (<span id="tabPredictCount">0</span>)
                 </button>
             </div>
 
@@ -1294,6 +1518,7 @@
                 <div class="rarity-filter-bar">
                     <button class="rarity-filter-btn active" id="rarityFilterAll" onclick="setRarityFilter('ALL')">All Rarity</button>
                     <button class="rarity-filter-btn btn-divine" id="rarityFilterDivine" onclick="setRarityFilter('Divine')"><span class="filter-dot dot-divine"></span> Divine</button>
+                    <button class="rarity-filter-btn btn-eternal" id="rarityFilterEternal" onclick="setRarityFilter('Eternal')"><span class="filter-dot dot-eternal"></span> Eternal</button>
                     <button class="rarity-filter-btn btn-secret" id="rarityFilterSecret" onclick="setRarityFilter('Secret')"><span class="filter-dot dot-secret"></span> Secret</button>
                     <button class="rarity-filter-btn btn-mythic" id="rarityFilterMythic" onclick="setRarityFilter('Mythic')"><span class="filter-dot dot-mythic"></span> Mythic</button>
                     <button class="rarity-filter-btn btn-legendary" id="rarityFilterLegendary" onclick="setRarityFilter('Legendary')"><span class="filter-dot dot-legendary"></span> Legendary</button>
@@ -1315,21 +1540,70 @@
                     <!-- Steal cards rendered here -->
                 </div>
             </div>
+
+            <!-- ================= VIEW 4: LIVE PREDICTOR ================= -->
+            <div id="viewPredictor">
+                <!-- PREDICTOR HERO BANNER -->
+                <div class="predictor-hero">
+                    <div class="predictor-hero-left">
+                        <span class="predictor-orb-icon">🔮</span>
+                        <div class="predictor-hero-text">
+                            <h2>Egg Spawn Predictor</h2>
+                            <p>Prediksi kemunculan telur otomatis berdasarkan algoritma RNG Drop Table Steal An Egg. Countdown berjalan realtime setiap detik.</p>
+                        </div>
+                    </div>
+                    <div class="predictor-hero-right">
+                        <div class="badge-predictor-live">
+                            <span class="pulse"></span>
+                            <span>LIVE RNG SYNC</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PREDICT CONTROLS BAR -->
+                <div class="predict-controls-bar">
+                    <div class="rarity-filter-bar" style="margin: 0;">
+                        <button class="rarity-filter-btn active" id="predFilterAll" onclick="setPredictRarityFilter('ALL')">All Rarity</button>
+                        <button class="rarity-filter-btn btn-divine" id="predFilterDivine" onclick="setPredictRarityFilter('Divine')"><span class="filter-dot dot-divine"></span> Divine</button>
+                        <button class="rarity-filter-btn btn-eternal" id="predFilterEternal" onclick="setPredictRarityFilter('Eternal')"><span class="filter-dot dot-eternal"></span> Eternal</button>
+                        <button class="rarity-filter-btn btn-secret" id="predFilterSecret" onclick="setPredictRarityFilter('Secret')"><span class="filter-dot dot-secret"></span> Secret</button>
+                        <button class="rarity-filter-btn btn-mythic" id="predFilterMythic" onclick="setPredictRarityFilter('Mythic')"><span class="filter-dot dot-mythic"></span> Mythic</button>
+                        <button class="rarity-filter-btn btn-legendary" id="predFilterLegendary" onclick="setPredictRarityFilter('Legendary')"><span class="filter-dot dot-legendary"></span> Legendary</button>
+                        <button class="rarity-filter-btn btn-epic" id="predFilterEpic" onclick="setPredictRarityFilter('Epic')"><span class="filter-dot dot-epic"></span> Epic</button>
+                        <button class="rarity-filter-btn btn-rare" id="predFilterRare" onclick="setPredictRarityFilter('Rare')"><span class="filter-dot dot-rare"></span> Rare</button>
+                        <button class="rarity-filter-btn btn-uncommon" id="predFilterUncommon" onclick="setPredictRarityFilter('Uncommon')"><span class="filter-dot dot-uncommon"></span> Uncommon</button>
+                        <button class="rarity-filter-btn btn-common" id="predFilterCommon" onclick="setPredictRarityFilter('Common')"><span class="filter-dot dot-common"></span> Common</button>
+                    </div>
+
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="predictSearchInput" class="search-input" placeholder="Cari telur atau area..." oninput="handlePredictSearch()">
+                    </div>
+                </div>
+
+                <!-- PREDICT CARDS GRID -->
+                <div class="predict-cards-grid" id="predictCardsGrid">
+                    <!-- Prediction cards rendered here -->
+                </div>
+            </div>
         </main>
     </div>
 
     <script>
         const PIN_KEY = "p4kong_joki_pin";
-        let activeMainTab = 'accounts'; // 'accounts' or 'steal'
+        let activeMainTab = 'accounts'; // 'accounts', 'steal', or 'predict'
         let currentDetailUsername = null; // null if on list view
         let activeCategory = 'eggs'; // 'eggs', 'pets_bp', 'pets_active'
         let cachedAccounts = [];
         let cachedSteals = [];
+        let cachedPredictions = [];
         let cachedThumbnails = {};
         let pendingThumbnailIds = new Set();
         let thumbnailFetchTimeout = null;
         let itemSearchQuery = '';
         let accountSearchQuery = '';
+        let predictSearchQuery = '';
+        let selectedPredictRarity = 'ALL';
 
         function queueThumbnailFetch(id) {
             const cleanId = String(id || '').match(/\d+/)?.[0];
@@ -1411,21 +1685,28 @@
         function startDataPolling() {
             fetchDashboardData();
             setInterval(fetchDashboardData, 5000);
+            setInterval(updatePredictorCountdowns, 1000);
         }
 
         function switchMainTab(tab) {
             activeMainTab = tab;
             const tabAcc = document.getElementById('tabAccountsBtn');
             const tabStl = document.getElementById('tabStealBtn');
+            const tabPred = document.getElementById('tabPredictBtn');
             const viewAcc = document.getElementById('viewAccounts');
             const viewDetail = document.getElementById('viewAccountDetail');
             const viewStl = document.getElementById('viewSteal');
+            const viewPred = document.getElementById('viewPredictor');
             const breadcrumbCurrent = document.getElementById('breadcrumbCurrent');
+
+            tabAcc.classList.remove('active');
+            tabStl.classList.remove('active');
+            if (tabPred) tabPred.classList.remove('active');
+            viewStl.style.display = 'none';
+            if (viewPred) viewPred.style.display = 'none';
 
             if (tab === 'accounts') {
                 tabAcc.classList.add('active');
-                tabStl.classList.remove('active');
-                viewStl.style.display = 'none';
                 if (currentDetailUsername) {
                     viewAcc.style.display = 'none';
                     viewDetail.style.display = 'flex';
@@ -1435,13 +1716,19 @@
                     viewDetail.style.display = 'none';
                     breadcrumbCurrent.innerText = 'Akun Joki';
                 }
-            } else {
-                tabAcc.classList.remove('active');
+            } else if (tab === 'steal') {
                 tabStl.classList.add('active');
                 viewAcc.style.display = 'none';
                 viewDetail.style.display = 'none';
                 viewStl.style.display = 'block';
                 breadcrumbCurrent.innerText = 'Log Telur Dicuri';
+            } else if (tab === 'predict') {
+                if (tabPred) tabPred.classList.add('active');
+                viewAcc.style.display = 'none';
+                viewDetail.style.display = 'none';
+                if (viewPred) viewPred.style.display = 'flex';
+                breadcrumbCurrent.innerText = 'Live Predictor';
+                renderPredictions();
             }
         }
 
@@ -1491,6 +1778,7 @@
                 if (data.success) {
                     cachedAccounts = data.accounts || [];
                     cachedSteals = data.stealEvents || [];
+                    cachedPredictions = data.predictions || [];
                     if (data.thumbnails) {
                         Object.assign(cachedThumbnails, data.thumbnails);
                     }
@@ -1501,10 +1789,15 @@
                     document.getElementById('tabCount').innerText = cachedAccounts.length;
                     document.getElementById('tabStealCount').innerText = cachedSteals.length;
 
+                    const nowSec = Math.floor(Date.now() / 1000);
+                    const activePredictionsCount = cachedPredictions.filter(p => (p.timeAt || 0) >= nowSec - 300).length;
+                    const tabPredEl = document.getElementById('tabPredictCount');
+                    if (tabPredEl) tabPredEl.innerText = activePredictionsCount;
+
                     // If viewing account detail, update detail smoothly without scroll reset
                     if (currentDetailUsername) {
                         updateDetailView();
-                    } else {
+                    } else if (activeMainTab === 'accounts') {
                         // Preserving list scroll
                         const currentScroll = window.scrollY;
                         renderAccountsList(cachedAccounts);
@@ -1512,6 +1805,9 @@
                     }
 
                     renderStealEvents(cachedSteals);
+                    if (activeMainTab === 'predict') {
+                        renderPredictions();
+                    }
                 }
             } catch (err) {
                 console.error("Fetch dashboard error:", err);
@@ -1677,7 +1973,8 @@
         function detectRarity(name) {
             const n = String(name || '').toLowerCase();
             if (n.includes('divine') || n.includes('godly') || n.includes('el maja') || n.includes('celestial') || n.includes('seraph') || n.includes('archangel')) return 'Divine';
-            if (n.includes('eternal') || n.includes('secret') || n.includes('cosmic') || n.includes('riftborn') || n.includes('burner') || n.includes('trala') || n.includes('saturno') || n.includes('vacca') || n.includes('void') || n.includes('astral') || n.includes('dimension')) return 'Secret';
+            if (n.includes('eternal') || n.includes('hellfire') || n.includes('infernal')) return 'Eternal';
+            if (n.includes('secret') || n.includes('cosmic') || n.includes('riftborn') || n.includes('burner') || n.includes('trala') || n.includes('saturno') || n.includes('vacca') || n.includes('void') || n.includes('astral') || n.includes('dimension')) return 'Secret';
             if (n.includes('mythic') || n.includes('kitsune') || n.includes('phoenix') || n.includes('oni tiger') || n.includes('gorilla king') || n.includes('skeleton boss') || n.includes('jellyfish') || n.includes('world eater') || n.includes('demon') || n.includes('hydra') || n.includes('cerberus')) return 'Mythic';
             if (n.includes('legendary') || n.includes('dragon') || n.includes('pegasus') || n.includes('mosasaurus') || n.includes('skeleton horse') || n.includes('ankylosaurus') || n.includes('rhinotaur') || n.includes('abyss') || n.includes('riftwing') || n.includes('wyvern') || n.includes('griffin')) return 'Legendary';
             if (n.includes('epic') || n.includes('volcano') || n.includes('titan') || n.includes('galaxy') || n.includes('dream') || n.includes('flame') || n.includes('wendigo') || n.includes('golem') || n.includes('thunder') || n.includes('storm')) return 'Epic';
@@ -1692,6 +1989,7 @@
 
             const colorMap = {
                 'Divine': { p: '#fde047', s: '#eab308', d: '#713f12', glow: '#fef08a' },
+                'Eternal': { p: '#f5d0fe', s: '#d946ef', d: '#701a75', glow: '#fae8ff' },
                 'Secret': { p: '#22d3ee', s: '#06b6d4', d: '#164e63', glow: '#67e8f9' },
                 'Mythic': { p: '#f87171', s: '#dc2626', d: '#7f1d1d', glow: '#fca5a5' },
                 'Legendary': { p: '#fbbf24', s: '#d97706', d: '#78350f', glow: '#fde68a' },
@@ -1910,6 +2208,138 @@
             if (seconds < 60) return `${seconds} dtk lalu`;
             if (seconds < 3600) return `${Math.floor(seconds / 60)} mnt lalu`;
             return `${Math.floor(seconds / 3600)} jam lalu`;
+        }
+
+        // ================= 4. RENDER LIVE PREDICTOR =================
+        function setPredictRarityFilter(r) {
+            selectedPredictRarity = r;
+            document.querySelectorAll('.predict-controls-bar .rarity-filter-btn').forEach(btn => btn.classList.remove('active'));
+            const btn = document.getElementById(r === 'ALL' ? 'predFilterAll' : `predFilter${r}`);
+            if (btn) btn.classList.add('active');
+            renderPredictions();
+        }
+
+        function handlePredictSearch() {
+            predictSearchQuery = document.getElementById('predictSearchInput').value.trim().toLowerCase();
+            renderPredictions();
+        }
+
+        function formatWibTime(timestampSeconds) {
+            if (!timestampSeconds) return '-';
+            const date = new Date(timestampSeconds * 1000);
+            return date.toLocaleTimeString('en-GB', {
+                timeZone: 'Asia/Jakarta',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            }) + ' WIB';
+        }
+
+        function renderPredictions() {
+            const grid = document.getElementById('predictCardsGrid');
+            if (!grid) return;
+
+            const now = Math.floor(Date.now() / 1000);
+            let list = (cachedPredictions || []).filter(p => (p.timeAt || 0) >= now - 300);
+
+            // Filter search
+            if (predictSearchQuery) {
+                list = list.filter(p => 
+                    (p.name || '').toLowerCase().includes(predictSearchQuery) ||
+                    String(p.area || '').toLowerCase().includes(predictSearchQuery) ||
+                    String(p.rarity || '').toLowerCase().includes(predictSearchQuery)
+                );
+            }
+
+            // Filter rarity
+            if (selectedPredictRarity !== 'ALL') {
+                list = list.filter(p => (p.rarity || '').toLowerCase() === selectedPredictRarity.toLowerCase());
+            }
+
+            // Sort ascending by timeAt (earliest first)
+            list.sort((a, b) => (a.timeAt || 0) - (b.timeAt || 0));
+
+            if (list.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-box">
+                        <h3>${cachedPredictions.length === 0 ? 'Belum Ada Data Prediksi' : 'Tidak Ditemukan'}</h3>
+                        <p>${cachedPredictions.length === 0 ? 'Data prediksi akan terisi otomatis saat executor Roblox aktif dan mengirim update RNG.' : 'Tidak ada jadwal spawn yang sesuai dengan filter pencarian.'}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = list.map(item => {
+                const rawRarity = item.rarity || 'Common';
+                const rarityClass = rawRarity.charAt(0).toUpperCase() + rawRarity.slice(1).toLowerCase();
+                const diff = (item.timeAt || 0) - now;
+                
+                let countdownHtml = '';
+                if (diff <= 0 && diff > -300) {
+                    countdownHtml = '<span class="countdown-spawning">🔥 SPAWNING NOW</span>';
+                } else if (diff <= -300) {
+                    countdownHtml = '<span class="countdown-passed">✓ SELESAI</span>';
+                } else {
+                    const h = Math.floor(diff / 3600);
+                    const m = Math.floor((diff % 3600) / 60);
+                    const s = diff % 60;
+                    let timeStr = h > 0 ? `${h}j ${m}m ${s < 10 ? '0' : ''}${s}d` : `${m}m ${s < 10 ? '0' : ''}${s}d`;
+                    const isImminent = diff <= 120;
+                    countdownHtml = `<span class="${isImminent ? 'countdown-imminent' : 'countdown-future'}">⏳ in ${timeStr}</span>`;
+                }
+
+                const phaseClass = (item.phase || '').toLowerCase() === 'night' ? 'phase-night' : '';
+                const phaseIcon = (item.phase || '').toLowerCase() === 'night' ? '🌙 Night' : '☀️ Day';
+
+                return `
+                    <div class="predict-card card-${rarityClass}">
+                        <div class="predict-badges-top">
+                            <span class="predict-area-badge mono">📍 Area ${item.area || '1'}</span>
+                            <span class="predict-phase-badge mono ${phaseClass}">${phaseIcon}</span>
+                        </div>
+
+                        <div class="item-card-visual-wrap">
+                            ${getEggOrPetSvg(rarityClass, 'eggs')}
+                        </div>
+
+                        <div class="rarity-accent-bar rarity-bar-${rarityClass}"></div>
+
+                        <span class="predict-egg-name" title="${item.name}">${item.name}</span>
+                        <span class="rarity-pill rarity-${rarityClass}">${rawRarity}</span>
+
+                        <div class="predict-countdown-box">
+                            <div class="predict-countdown-ticker predict-countdown-text mono" data-timeat="${item.timeAt}">
+                                ${countdownHtml}
+                            </div>
+                            <span class="predict-time-sub mono">⏰ ${formatWibTime(item.timeAt)}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updatePredictorCountdowns() {
+            if (activeMainTab !== 'predict') return;
+            const now = Math.floor(Date.now() / 1000);
+            const tickers = document.querySelectorAll('.predict-countdown-ticker');
+            tickers.forEach(el => {
+                const timeAt = parseInt(el.getAttribute('data-timeat'), 10);
+                if (isNaN(timeAt)) return;
+                const diff = timeAt - now;
+                if (diff <= 0 && diff > -300) {
+                    el.innerHTML = '<span class="countdown-spawning">🔥 SPAWNING NOW</span>';
+                } else if (diff <= -300) {
+                    el.innerHTML = '<span class="countdown-passed">✓ SELESAI</span>';
+                } else {
+                    const h = Math.floor(diff / 3600);
+                    const m = Math.floor((diff % 3600) / 60);
+                    const s = diff % 60;
+                    let timeStr = h > 0 ? `${h}j ${m}m ${s < 10 ? '0' : ''}${s}d` : `${m}m ${s < 10 ? '0' : ''}${s}d`;
+                    const isImminent = diff <= 120;
+                    el.innerHTML = `<span class="${isImminent ? 'countdown-imminent' : 'countdown-future'}">⏳ in ${timeStr}</span>`;
+                }
+            });
         }
     </script>
 </body>
