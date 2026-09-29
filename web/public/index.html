@@ -1563,16 +1563,9 @@
                 <!-- PREDICT CONTROLS BAR -->
                 <div class="predict-controls-bar">
                     <div class="rarity-filter-bar" style="margin: 0;">
-                        <button class="rarity-filter-btn active" id="predFilterAll" onclick="setPredictRarityFilter('ALL')">All Rarity</button>
+                        <button class="rarity-filter-btn active" id="predFilterAll" onclick="setPredictRarityFilter('ALL')">All (Divine & Eternal)</button>
                         <button class="rarity-filter-btn btn-divine" id="predFilterDivine" onclick="setPredictRarityFilter('Divine')"><span class="filter-dot dot-divine"></span> Divine</button>
                         <button class="rarity-filter-btn btn-eternal" id="predFilterEternal" onclick="setPredictRarityFilter('Eternal')"><span class="filter-dot dot-eternal"></span> Eternal</button>
-                        <button class="rarity-filter-btn btn-secret" id="predFilterSecret" onclick="setPredictRarityFilter('Secret')"><span class="filter-dot dot-secret"></span> Secret</button>
-                        <button class="rarity-filter-btn btn-mythic" id="predFilterMythic" onclick="setPredictRarityFilter('Mythic')"><span class="filter-dot dot-mythic"></span> Mythic</button>
-                        <button class="rarity-filter-btn btn-legendary" id="predFilterLegendary" onclick="setPredictRarityFilter('Legendary')"><span class="filter-dot dot-legendary"></span> Legendary</button>
-                        <button class="rarity-filter-btn btn-epic" id="predFilterEpic" onclick="setPredictRarityFilter('Epic')"><span class="filter-dot dot-epic"></span> Epic</button>
-                        <button class="rarity-filter-btn btn-rare" id="predFilterRare" onclick="setPredictRarityFilter('Rare')"><span class="filter-dot dot-rare"></span> Rare</button>
-                        <button class="rarity-filter-btn btn-uncommon" id="predFilterUncommon" onclick="setPredictRarityFilter('Uncommon')"><span class="filter-dot dot-uncommon"></span> Uncommon</button>
-                        <button class="rarity-filter-btn btn-common" id="predFilterCommon" onclick="setPredictRarityFilter('Common')"><span class="filter-dot dot-common"></span> Common</button>
                     </div>
 
                     <div class="search-box">
@@ -1790,7 +1783,10 @@
                     document.getElementById('tabStealCount').innerText = cachedSteals.length;
 
                     const nowSec = Math.floor(Date.now() / 1000);
-                    const activePredictionsCount = cachedPredictions.filter(p => (p.timeAt || 0) >= nowSec - 300).length;
+                    const activePredictionsCount = cachedPredictions.filter(p => {
+                        const r = String(p.rarity || '').toLowerCase();
+                        return (r === 'divine' || r === 'eternal') && (p.timeAt || 0) >= nowSec - 300;
+                    }).length;
                     const tabPredEl = document.getElementById('tabPredictCount');
                     if (tabPredEl) tabPredEl.innerText = activePredictionsCount;
 
@@ -2236,12 +2232,37 @@
             }) + ' WIB';
         }
 
+        function formatPredictCountdownStr(diff) {
+            if (diff <= 0 && diff > -300) return '<span class="countdown-spawning">🔥 SPAWNING NOW</span>';
+            if (diff <= -300) return '<span class="countdown-passed">✓ SELESAI</span>';
+            let timeStr = '';
+            if (diff >= 86400) {
+                const d = Math.floor(diff / 86400);
+                const h = Math.floor((diff % 86400) / 3600);
+                timeStr = `${d}d ${h}h`;
+            } else if (diff >= 3600) {
+                const h = Math.floor(diff / 3600);
+                const m = Math.floor((diff % 3600) / 60);
+                timeStr = `${h}h ${m}m`;
+            } else {
+                const m = Math.floor(diff / 60);
+                const s = diff % 60;
+                timeStr = `${m}m ${s < 10 ? '0' : ''}${s}s`;
+            }
+            const isImminent = diff <= 180;
+            return `<span class="${isImminent ? 'countdown-imminent' : 'countdown-future'}">⏳ in ${timeStr}</span>`;
+        }
+
         function renderPredictions() {
             const grid = document.getElementById('predictCardsGrid');
             if (!grid) return;
 
             const now = Math.floor(Date.now() / 1000);
-            let list = (cachedPredictions || []).filter(p => (p.timeAt || 0) >= now - 300);
+            // STRICT FILTER: Divine & Eternal ONLY!
+            let list = (cachedPredictions || []).filter(p => {
+                const r = String(p.rarity || '').toLowerCase();
+                return (r === 'divine' || r === 'eternal') && (p.timeAt || 0) >= now - 300;
+            });
 
             // Filter search
             if (predictSearchQuery) {
@@ -2252,9 +2273,9 @@
                 );
             }
 
-            // Filter rarity
+            // Filter rarity (ALL, Divine, Eternal)
             if (selectedPredictRarity !== 'ALL') {
-                list = list.filter(p => (p.rarity || '').toLowerCase() === selectedPredictRarity.toLowerCase());
+                list = list.filter(p => String(p.rarity || '').toLowerCase() === selectedPredictRarity.toLowerCase());
             }
 
             // Sort ascending by timeAt (earliest first)
@@ -2263,50 +2284,35 @@
             if (list.length === 0) {
                 grid.innerHTML = `
                     <div class="empty-box">
-                        <h3>${cachedPredictions.length === 0 ? 'Belum Ada Data Prediksi' : 'Tidak Ditemukan'}</h3>
-                        <p>${cachedPredictions.length === 0 ? 'Data prediksi akan terisi otomatis saat executor Roblox aktif dan mengirim update RNG.' : 'Tidak ada jadwal spawn yang sesuai dengan filter pencarian.'}</p>
+                        <h3>Tidak Ada Jadwal Divine / Eternal</h3>
+                        <p>Belum ada jadwal spawn telur Divine atau Eternal yang terdeteksi, atau scanner game sedang mensimulasikan drop table.</p>
                     </div>
                 `;
                 return;
             }
 
             grid.innerHTML = list.map(item => {
-                const rawRarity = item.rarity || 'Common';
-                const rarityClass = rawRarity.charAt(0).toUpperCase() + rawRarity.slice(1).toLowerCase();
+                const rawRarity = String(item.rarity || '').toLowerCase() === 'eternal' ? 'Eternal' : 'Divine';
                 const diff = (item.timeAt || 0) - now;
-                
-                let countdownHtml = '';
-                if (diff <= 0 && diff > -300) {
-                    countdownHtml = '<span class="countdown-spawning">🔥 SPAWNING NOW</span>';
-                } else if (diff <= -300) {
-                    countdownHtml = '<span class="countdown-passed">✓ SELESAI</span>';
-                } else {
-                    const h = Math.floor(diff / 3600);
-                    const m = Math.floor((diff % 3600) / 60);
-                    const s = diff % 60;
-                    let timeStr = h > 0 ? `${h}j ${m}m ${s < 10 ? '0' : ''}${s}d` : `${m}m ${s < 10 ? '0' : ''}${s}d`;
-                    const isImminent = diff <= 120;
-                    countdownHtml = `<span class="${isImminent ? 'countdown-imminent' : 'countdown-future'}">⏳ in ${timeStr}</span>`;
-                }
-
+                const countdownHtml = formatPredictCountdownStr(diff);
                 const phaseClass = (item.phase || '').toLowerCase() === 'night' ? 'phase-night' : '';
                 const phaseIcon = (item.phase || '').toLowerCase() === 'night' ? '🌙 Night' : '☀️ Day';
 
                 return `
-                    <div class="predict-card card-${rarityClass}">
+                    <div class="predict-card card-${rawRarity}">
                         <div class="predict-badges-top">
                             <span class="predict-area-badge mono">📍 Area ${item.area || '1'}</span>
                             <span class="predict-phase-badge mono ${phaseClass}">${phaseIcon}</span>
                         </div>
 
                         <div class="item-card-visual-wrap">
-                            ${getEggOrPetSvg(rarityClass, 'eggs')}
+                            ${getEggOrPetSvg(rawRarity, 'eggs')}
                         </div>
 
-                        <div class="rarity-accent-bar rarity-bar-${rarityClass}"></div>
+                        <div class="rarity-accent-bar rarity-bar-${rawRarity}"></div>
 
                         <span class="predict-egg-name" title="${item.name}">${item.name}</span>
-                        <span class="rarity-pill rarity-${rarityClass}">${rawRarity}</span>
+                        <span class="rarity-pill rarity-${rawRarity}">${rawRarity}</span>
 
                         <div class="predict-countdown-box">
                             <div class="predict-countdown-ticker predict-countdown-text mono" data-timeat="${item.timeAt}">
@@ -2327,18 +2333,7 @@
                 const timeAt = parseInt(el.getAttribute('data-timeat'), 10);
                 if (isNaN(timeAt)) return;
                 const diff = timeAt - now;
-                if (diff <= 0 && diff > -300) {
-                    el.innerHTML = '<span class="countdown-spawning">🔥 SPAWNING NOW</span>';
-                } else if (diff <= -300) {
-                    el.innerHTML = '<span class="countdown-passed">✓ SELESAI</span>';
-                } else {
-                    const h = Math.floor(diff / 3600);
-                    const m = Math.floor((diff % 3600) / 60);
-                    const s = diff % 60;
-                    let timeStr = h > 0 ? `${h}j ${m}m ${s < 10 ? '0' : ''}${s}d` : `${m}m ${s < 10 ? '0' : ''}${s}d`;
-                    const isImminent = diff <= 120;
-                    el.innerHTML = `<span class="${isImminent ? 'countdown-imminent' : 'countdown-future'}">⏳ in ${timeStr}</span>`;
-                }
+                el.innerHTML = formatPredictCountdownStr(diff);
             });
         }
     </script>
