@@ -890,8 +890,8 @@ task.spawn(function()
             end
         end
 
-        for i = 1, 100 do
-            if i % 15 == 0 then task.wait() end -- Smooth yielding
+        for i = 1, 1500 do
+            if i % 50 == 0 then task.wait() end -- Smooth yielding (zero lag)
 
             local p = currentIdx + i
             local pStart = getPeriodStartsAt(p)
@@ -912,14 +912,22 @@ task.spawn(function()
                     
                     local function ProcessEgg(petName, timeAt, phase)
                         local rarity = AssetRarityMap[petName] or "Unknown"
+                        local rLow = string.lower(tostring(rarity))
+                        
+                        -- STRICT: Hanya Divine dan Eternal!
+                        if rLow ~= "divine" and rLow ~= "eternal" then
+                            return
+                        end
+
+                        local canonRarity = (rLow == "divine") and "Divine" or "Eternal"
                         local uniqueKey = petName .. "_" .. areaName .. "_" .. tostring(timeAt)
                         
                         if not seenTracker[uniqueKey] then
                             seenTracker[uniqueKey] = true
-                            if not tempCache[rarity] then tempCache[rarity] = {} end
-                            table.insert(tempCache[rarity], {
+                            if not tempCache[canonRarity] then tempCache[canonRarity] = {} end
+                            table.insert(tempCache[canonRarity], {
                                 Name = petName,
-                                Rarity = rarity,
+                                Rarity = canonRarity,
                                 TimeAt = timeAt,
                                 Area = areaName,
                                 Phase = phase,
@@ -946,23 +954,26 @@ local function getPredictionSummary()
     local now = workspace:GetServerTimeNow()
 
     for rName, list in pairs(CachedPredictions) do
-        for _, pet in ipairs(list) do
-            local timeDiff = pet.TimeAt - now
-            if timeDiff > -10 and timeDiff <= (5 * 3600) then -- up to 5 hours ahead
-                table.insert(result, {
-                    name = pet.Name,
-                    rarity = pet.Rarity or rName,
-                    area = pet.Area,
-                    phase = pet.Phase,
-                    timeAt = math.floor(pet.TimeAt),
-                    timeDiff = math.floor(timeDiff)
-                })
+        local rLow = string.lower(tostring(rName))
+        if rLow == "divine" or rLow == "eternal" then
+            for _, pet in ipairs(list) do
+                local timeDiff = pet.TimeAt - now
+                if timeDiff > -10 then -- semua jadwal Divine dan Eternal ke depan
+                    table.insert(result, {
+                        name = pet.Name,
+                        rarity = pet.Rarity or rName,
+                        area = pet.Area,
+                        phase = pet.Phase,
+                        timeAt = math.floor(pet.TimeAt),
+                        timeDiff = math.floor(timeDiff)
+                    })
+                end
             end
         end
     end
     table.sort(result, function(a, b) return a.timeAt < b.timeAt end)
 
-    -- Trim to top 60 predictions to keep payload lightweight (~2KB)
+    -- Trim to top 60 Divine & Eternal predictions
     if #result > 60 then
         local trimmed = {}
         for i = 1, 60 do table.insert(trimmed, result[i]) end
@@ -1618,26 +1629,61 @@ local PredParagraph = TabPredict:Paragraph({
     Desc = "Sedang memuat data prediksi..."
 })
 
+local function formatPredictCountdown(sec)
+    if sec <= 0 then return "Now" end
+    local days = math.floor(sec / 86400)
+    local hours = math.floor((sec % 86400) / 3600)
+    local mins = math.floor((sec % 3600) / 60)
+    if days > 0 then
+        return string.format("%dd %dh", days, hours)
+    elseif hours > 0 then
+        return string.format("%dh %dm", hours, mins)
+    else
+        return string.format("%dm", mins)
+    end
+end
+
 local function refreshPredictorUI()
     local preds = getPredictionSummary()
     local now = workspace:GetServerTimeNow()
-    local items = {}
+
+    local divineList = {}
+    local eternalList = {}
 
     for _, p in ipairs(preds) do
-        local rLow = (p.rarity or ""):lower()
-        if rLow == "divine" or rLow == "eternal" or rLow == "secret" then
-            local diff = p.timeAt - now
-            local minLeft = math.floor(diff / 60)
-            local clockWib = os.date("!%H:%M", p.timeAt + 7 * 3600) .. " WIB"
-            table.insert(items, string.format("• [%s] %s @ %s (%s) - %s (~%dm lagi)", p.rarity, p.name, p.area, p.phase, clockWib, minLeft))
-            if #items >= 12 then break end
+        local rLow = string.lower(tostring(p.rarity or ""))
+        local diff = p.timeAt - now
+        local clockWib = os.date("!%H:%M", p.timeAt + 7 * 3600)
+        local cdStr = formatPredictCountdown(diff)
+        local line = string.format("%s - %s (%s) @ %s", p.name, clockWib, cdStr, p.area)
+
+        if rLow == "divine" then
+            table.insert(divineList, line)
+        elseif rLow == "eternal" then
+            table.insert(eternalList, line)
         end
     end
 
-    if #items == 0 then
-        PredParagraph:SetDesc("Belum ada jadwal spawn Divine / Eternal dalam waktu dekat, atau scanner sedang memuat.")
+    local textParts = {}
+    if #divineList > 0 then
+        table.insert(textParts, "👑 DIVINE")
+        for i = 1, math.min(#divineList, 15) do
+            table.insert(textParts, divineList[i])
+        end
+    end
+
+    if #eternalList > 0 then
+        if #textParts > 0 then table.insert(textParts, "") end
+        table.insert(textParts, "🔥 ETERNAL")
+        for i = 1, math.min(#eternalList, 15) do
+            table.insert(textParts, eternalList[i])
+        end
+    end
+
+    if #textParts == 0 then
+        PredParagraph:SetDesc("Belum ada jadwal spawn Divine / Eternal terdeteksi, atau scanner sedang berjalan...")
     else
-        PredParagraph:SetDesc(table.concat(items, "\n"))
+        PredParagraph:SetDesc(table.concat(textParts, "\n"))
     end
 end
 
