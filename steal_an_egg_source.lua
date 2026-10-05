@@ -1,6 +1,6 @@
 --[[
     ===================================================================
-    ðŸ¥š Steal An Egg - Pure Account Monitoring & Webhook Tracker
+    🥚 Steal An Egg - Pure Account Monitoring & Webhook Tracker
     GitHub Repo: https://github.com/kongsprb-lgtm/monitoring
     ===================================================================
     Execute via Loadstring:
@@ -45,6 +45,28 @@ local function formatDuration(seconds)
     local mins = math.floor((seconds % 3600) / 60)
     local secs = seconds % 60
     return string.format("%02d jam %02d menit %02d detik", hours, mins, secs)
+end
+
+-- // Helper Mengambil URL Gambar Asli Roblox CDN (tr.rbxcdn.com) untuk Discord Embed
+local ThumbnailCache = {}
+local function getRobloxThumbnailUrl(assetId)
+    if not assetId then return nil end
+    local cleanId = tostring(assetId):match("%d+")
+    if not cleanId or #cleanId < 6 then return nil end
+    if ThumbnailCache[cleanId] then return ThumbnailCache[cleanId] end
+
+    local ok, res = pcall(function()
+        return game:HttpGet("https://thumbnails.roblox.com/v1/assets?assetIds=" .. cleanId .. "&size=420x420&format=Png")
+    end)
+    if ok and res and type(res) == "string" then
+        local okJson, decoded = pcall(function() return HttpService:JSONDecode(res) end)
+        if okJson and decoded and decoded.data and decoded.data[1] and decoded.data[1].imageUrl then
+            local imgUrl = decoded.data[1].imageUrl
+            ThumbnailCache[cleanId] = imgUrl
+            return imgUrl
+        end
+    end
+    return nil
 end
 
 -- // Config Storage (Simpan Pilihan User ke File Lokal Executor)
@@ -125,7 +147,7 @@ local function GetMutationsString(data)
 end
 
 -- ====================================================================
--- ðŸ“Š DATA COLLECTOR ENGINE (MULTI-SOURCE: sData + UI + LEADERSTATS)
+-- 📊 DATA COLLECTOR ENGINE (MULTI-SOURCE: sData + UI + LEADERSTATS)
 -- ====================================================================
 
 -- Helper membersihkan tag RichText dan whitespace
@@ -615,7 +637,7 @@ local function getPlayerCurrencies()
         end
     end)
 
-    -- ðŸ” FALLBACK 1: Baca Cash dari Save Data (sData) jika UI belum terbaca
+    -- 🔍 FALLBACK 1: Baca Cash dari Save Data (sData) jika UI belum terbaca
     if data.money == "N/A" then
         pcall(function()
             local sData = getSaveData()
@@ -652,7 +674,7 @@ local function getPlayerCurrencies()
         end)
     end
 
-    -- ðŸ” FALLBACK 2: Leaderstats
+    -- 🔍 FALLBACK 2: Leaderstats
     pcall(function()
         local ls = LocalPlayer:FindFirstChild("leaderstats")
         if ls then
@@ -696,7 +718,7 @@ local function getInventorySummary()
     local uiEggIcons = {}
 
     -- ================================================================
-    -- ðŸ” SUMBER 1: BACA DARI UI (PlayerGui) - SUMBER PALING AKURAT & REALTIME
+    -- 🔍 SUMBER 1: BACA DARI UI (PlayerGui) - SUMBER PALING AKURAT & REALTIME
     -- ================================================================
     pcall(function()
         local pg = LocalPlayer:FindFirstChild("PlayerGui")
@@ -817,7 +839,7 @@ local function getInventorySummary()
     end)
 
     -- ================================================================
-    -- ðŸ” SUMBER 2: BACA DARI SAVE DATA GAME (sData)
+    -- 🔍 SUMBER 2: BACA DARI SAVE DATA GAME (sData)
     -- ================================================================
     pcall(function()
         local sData = getSaveData()
@@ -1000,7 +1022,7 @@ local function getInventorySummary()
     end)
 
     -- ================================================================
-    -- ðŸ”„ SINKRONISASI AKHIR DENGAN PRIORITAS UI
+    -- 🔄 SINKRONISASI AKHIR DENGAN PRIORITAS UI
     -- ================================================================
 
     -- 1. Sync Pet di Kandang (Active)
@@ -1162,7 +1184,7 @@ local function getInventorySummary()
 end
 
 -- ====================================================================
--- ðŸ”® PREDICTOR ENGINE (RNG & DROP TABLE SIMULATOR)
+-- 🔮 PREDICTOR ENGINE (RNG & DROP TABLE SIMULATOR)
 -- ====================================================================
 local AreaData = {}
 local AssetRarityMap = {}
@@ -1396,7 +1418,7 @@ local function getPredictionSummary()
 end
 
 -- ====================================================================
--- ðŸŒ WEBHOOK SENDERS
+-- 🌐 WEBHOOK SENDERS
 -- ====================================================================
 
 -- Kirim Laporan Statistik ke Web Dashboard (p4kong.site)
@@ -1486,13 +1508,13 @@ local function sendPeriodicStatusReport()
         end
 
         table.insert(embedFields, {
-            name = "ðŸ’° Money Sekarang",
+            name = "💰 Money Sekarang",
             value = "```" .. tostring(currencies.money) .. "```",
             inline = true
         })
 
         table.insert(embedFields, {
-            name = "ðŸ’¸ Money / Detik",
+            name = "💸 Money / Detik",
             value = "```" .. tostring(mps) .. "```",
             inline = true
         })
@@ -1501,8 +1523,8 @@ local function sendPeriodicStatusReport()
     -- Best Pet (Jika Ditemukan)
     if inv.bestPet then
         table.insert(embedFields, {
-            name = "ðŸ‘‘ Best Pet",
-            value = string.format("```%s (%s â€¢ %s)```", inv.bestPet.name, inv.bestPet.rarity, inv.bestPet.earnRate),
+            name = "👑 Best Pet",
+            value = string.format("```%s (%s • %s)```", inv.bestPet.name, inv.bestPet.rarity, inv.bestPet.earnRate),
             inline = true
         })
     end
@@ -1510,7 +1532,7 @@ local function sendPeriodicStatusReport()
     -- 2. Speed Sekarang (Jika Dipilih)
     if Config.Track_Speed then
         table.insert(embedFields, {
-            name = "âš¡ Speed Sekarang",
+            name = "⚡ Speed Sekarang",
             value = "```" .. tostring(currencies.speed) .. "```",
             inline = true
         })
@@ -1519,7 +1541,7 @@ local function sendPeriodicStatusReport()
     -- 3. Level Info
     if currencies.level ~= "N/A" then
         table.insert(embedFields, {
-            name = "ðŸŽ–ï¸ Level",
+            name = "🎖️ Level",
             value = "```" .. tostring(currencies.level) .. "```",
             inline = true
         })
@@ -1531,14 +1553,14 @@ local function sendPeriodicStatusReport()
         local items = {}
         for name, count in pairs(inv.petsInKandang) do
             local c = type(count) == "table" and (count.count or 1) or tonumber(count) or 1
-            table.insert(items, string.format("â€¢ %s: `x%d`", name, c))
+            table.insert(items, string.format("• %s: `x%d`", name, c))
             if #items >= 15 then break end
         end
         if #items > 0 then
             kandangDetail = kandangDetail .. "\n" .. table.concat(items, "\n")
         end
         table.insert(embedFields, {
-            name = "ðŸ¡ Pet di Kandang (Active)",
+            name = "🏡 Pet di Kandang (Active)",
             value = kandangDetail,
             inline = false
         })
@@ -1550,14 +1572,14 @@ local function sendPeriodicStatusReport()
         local items = {}
         for name, count in pairs(inv.eggsInBackpack) do
             local c = type(count) == "table" and (count.count or 1) or tonumber(count) or 1
-            table.insert(items, string.format("â€¢ %s: `x%d`", name, c))
+            table.insert(items, string.format("• %s: `x%d`", name, c))
             if #items >= 12 then break end
         end
         if #items > 0 then
             eggDetail = eggDetail .. "\n" .. table.concat(items, "\n")
         end
         table.insert(embedFields, {
-            name = "ðŸŽ’ Egg di Backpack",
+            name = "🎒 Egg di Backpack",
             value = eggDetail,
             inline = false
         })
@@ -1569,14 +1591,14 @@ local function sendPeriodicStatusReport()
         local items = {}
         for name, count in pairs(inv.petsInBackpack) do
             local c = type(count) == "table" and (count.count or 1) or tonumber(count) or 1
-            table.insert(items, string.format("â€¢ %s: `x%d`", name, c))
+            table.insert(items, string.format("• %s: `x%d`", name, c))
             if #items >= 12 then break end
         end
         if #items > 0 then
             petDetail = petDetail .. "\n" .. table.concat(items, "\n")
         end
         table.insert(embedFields, {
-            name = "ðŸ¾ Pet di Backpack",
+            name = "🐾 Pet di Backpack",
             value = petDetail,
             inline = false
         })
@@ -1584,12 +1606,12 @@ local function sendPeriodicStatusReport()
 
     -- Field Info Server & Durasi
     table.insert(embedFields, {
-        name = "â³ Durasi Monitoring",
+        name = "⏳ Durasi Monitoring",
         value = uptimeStr,
         inline = true
     })
     table.insert(embedFields, {
-        name = "ðŸ“¶ Ping",
+        name = "📶 Ping",
         value = currencies.ping,
         inline = true
     })
@@ -1602,12 +1624,12 @@ local function sendPeriodicStatusReport()
         username = "Steal An Egg Monitor",
         avatar_url = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. LocalPlayer.UserId .. "&width=150&height=150&format=png",
         embeds = {{
-            title = "ðŸ“Š Laporan Akun: " .. LocalPlayer.DisplayName .. " (@" .. LocalPlayer.Name .. ")",
-            description = "Game: **Steal An Egg** â€¢ Status: ðŸŸ¢ **Monitoring Aktif**",
+            title = "📊 Laporan Akun: " .. LocalPlayer.DisplayName .. " (@" .. LocalPlayer.Name .. ")",
+            description = "Game: **Steal An Egg** • Status: 🟢 **Monitoring Aktif**",
             color = 3447003,
             fields = embedFields,
             thumbnail = {
-                url = (inv.bestPet and inv.bestPet.icon and ("https://assetdelivery.roblox.com/v1/asset/?id=" .. inv.bestPet.icon))
+                url = (inv.bestPet and inv.bestPet.icon and getRobloxThumbnailUrl(inv.bestPet.icon))
                     or ("https://www.roblox.com/headshot-thumbnail/image?userId=" .. LocalPlayer.UserId .. "&width=150&height=150&format=png")
             },
             footer = { text = "P4kong x SysHub Monitor • Auto Report" },
@@ -1698,7 +1720,7 @@ local function sendEggStealEvent(cat, rec)
     local ping = Config.WebhookPingID
     local mentionStr = (ping and ping ~= "") and ("<@" .. ping .. ">") or nil
 
-    local thumbUrl = eggIcon and ("https://assetdelivery.roblox.com/v1/asset/?id=" .. eggIcon)
+    local thumbUrl = (eggIcon and getRobloxThumbnailUrl(eggIcon))
         or ("https://www.roblox.com/headshot-thumbnail/image?userId=" .. LocalPlayer.UserId .. "&width=150&height=150&format=png")
 
     local payload = {
@@ -1737,7 +1759,7 @@ local function sendEggStealEvent(cat, rec)
 end
 
 -- ====================================================================
--- ðŸ–¥ï¸ WINDUI INTERFACE (CLEAN & USER CONFIGURABLE)
+-- 🖥️ WINDUI INTERFACE (CLEAN & USER CONFIGURABLE)
 -- ====================================================================
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 
@@ -1776,7 +1798,7 @@ local Window = WindUI:CreateWindow({
 -- TAB 1: WEB MONITORING (p4kong.site/monitoringjoki)
 local TabWeb = Window:Tab({ Title = "Web Monitor", Icon = "globe", Locked = false })
 
-TabWeb:Section({ Title = "ðŸŒ Monitoring Online di p4kong.site", TextSize = 18 })
+TabWeb:Section({ Title = "🌐 Monitoring Online di p4kong.site", TextSize = 18 })
 
 TabWeb:Toggle({
     Title = "Aktifkan Monitoring Web (p4kong.site)",
@@ -1795,11 +1817,11 @@ TabWeb:Toggle({
 
 TabWeb:Paragraph({
     Title = "Akses Dashboard Joki Online",
-    Desc = "ðŸŒ URL: https://p4kong.site/monitoringjoki\nðŸ”‘ PIN Akses: 1802\n\nBuka link di browser HP atau PC untuk memantau semua akun joki secara realtime."
+    Desc = "🌐 URL: https://p4kong.site/monitoringjoki\n🔑 PIN Akses: 1802\n\nBuka link di browser HP atau PC untuk memantau semua akun joki secara realtime."
 })
 
 TabWeb:Button({
-    Title = "âš¡ Kirim Update ke Web Sekarang",
+    Title = "⚡ Kirim Update ke Web Sekarang",
     Icon = "send",
     Color = Color3.fromRGB(56, 189, 248),
     Callback = function()
@@ -1813,7 +1835,7 @@ TabWeb:Button({
 })
 
 TabWeb:Button({
-    Title = "ðŸ“‹ Salin Link Dashboard (p4kong.site)",
+    Title = "📋 Salin Link Dashboard (p4kong.site)",
     Icon = "copy",
     Color = Color3.fromRGB(16, 185, 129),
     Callback = function()
@@ -1854,7 +1876,7 @@ TabWebhook:Input({
 })
 
 TabWebhook:Divider()
-TabWebhook:Section({ Title = "â±ï¸ Jadwal Update Statistik Akun", TextSize = 18 })
+TabWebhook:Section({ Title = "⏱️ Jadwal Update Statistik Akun", TextSize = 18 })
 
 -- Dropdown Pilihan Menit Preset
 TabWebhook:Dropdown({
@@ -1894,7 +1916,7 @@ TabWebhook:Slider({
 
 -- Tombol Aksi Update & Reset
 TabWebhook:Button({
-    Title = "âš¡ Update & Kirim Statistik Sekarang",
+    Title = "⚡ Update & Kirim Statistik Sekarang",
     Icon = "send",
     Color = Color3.fromRGB(0, 255, 127),
     Callback = function()
@@ -1909,7 +1931,7 @@ TabWebhook:Button({
 })
 
 TabWebhook:Button({
-    Title = "ðŸ”„ Reset Timer Laporan Berkala",
+    Title = "🔄 Reset Timer Laporan Berkala",
     Icon = "timer",
     Color = Color3.fromRGB(56, 189, 248),
     Callback = function()
@@ -1923,7 +1945,7 @@ TabWebhook:Button({
 })
 
 TabWebhook:Divider()
-TabWebhook:Section({ Title = "ðŸ“Š Pilihan Data yang Dimasukkan ke Webhook", TextSize = 18 })
+TabWebhook:Section({ Title = "📊 Pilihan Data yang Dimasukkan ke Webhook", TextSize = 18 })
 
 TabWebhook:Toggle({
     Title = "Egg yang di dapet (Realtime Saat Mencuri)",
@@ -2022,17 +2044,17 @@ local function refreshStatsUI()
         end
     end
 
-    local bestPetStr = inv.bestPet and string.format("%s (%s â€¢ %s)", inv.bestPet.name, inv.bestPet.rarity, inv.bestPet.earnRate) or "N/A"
+    local bestPetStr = inv.bestPet and string.format("%s (%s • %s)", inv.bestPet.name, inv.bestPet.rarity, inv.bestPet.earnRate) or "N/A"
 
     local desc = string.format(
-        "ðŸ’° Money: %s\nðŸ’¸ Money/s: %s\nâš¡ Speed: %s\nðŸŽ–ï¸ Level: %s\nðŸ‘‘ Best Pet: %s\n\nðŸ¡ Pet di Kandang: %s\nðŸŽ’ Telur di Backpack: %d\nðŸ¾ Pet di Backpack: %d\n\nâ³ Uptime: %s\nðŸ“¶ Ping: %s\nâ±ï¸ Update Berikutnya: %d detik lagi",
+        "💰 Money: %s\n💸 Money/s: %s\n⚡ Speed: %s\n🎖️ Level: %s\n👑 Best Pet: %s\n\n🏡 Pet di Kandang: %s\n🎒 Telur di Backpack: %d\n🐾 Pet di Backpack: %d\n\n⏳ Uptime: %s\n📶 Ping: %s\n⏱️ Update Berikutnya: %d detik lagi",
         cur.money, mps, cur.speed, cur.level, bestPetStr,
         petKandangStr,
         inv.eggBackpackCount, inv.petBackpackCount,
         formatDuration(os.time() - ScriptStartTime), cur.ping,
         remaining
     )
-    desc = desc .. "\nðŸ’¾ Save Data: " .. tostring(SaveDataStatus)
+    desc = desc .. "\n💾 Save Data: " .. tostring(SaveDataStatus)
     StatParagraph:SetDesc(desc)
 end
 
@@ -2047,7 +2069,7 @@ TabStats:Button({
 
 -- TAB 4: LIVE PREDICTOR (EGG SPAWN PREDICTION)
 local TabPredict = Window:Tab({ Title = "Predictor", Icon = "clock", Locked = false })
-TabPredict:Section({ Title = "ðŸ”® Live Egg Spawn Predictor", TextSize = 18 })
+TabPredict:Section({ Title = "🔮 Live Egg Spawn Predictor", TextSize = 18 })
 
 TabPredict:Paragraph({
     Title = "SysHub x P4kong Prediction Engine",
@@ -2096,7 +2118,7 @@ local function refreshPredictorUI()
 
     local textParts = {}
     if #divineList > 0 then
-        table.insert(textParts, "ðŸ‘‘ DIVINE")
+        table.insert(textParts, "👑 DIVINE")
         for i = 1, math.min(#divineList, 15) do
             table.insert(textParts, divineList[i])
         end
@@ -2104,7 +2126,7 @@ local function refreshPredictorUI()
 
     if #eternalList > 0 then
         if #textParts > 0 then table.insert(textParts, "") end
-        table.insert(textParts, "ðŸ”¥ ETERNAL")
+        table.insert(textParts, "🔥 ETERNAL")
         for i = 1, math.min(#eternalList, 15) do
             table.insert(textParts, eternalList[i])
         end
@@ -2118,7 +2140,7 @@ local function refreshPredictorUI()
 end
 
 TabPredict:Button({
-    Title = "ðŸ”„ Refresh Prediksi In-Game",
+    Title = "🔄 Refresh Prediksi In-Game",
     Icon = "refresh-cw",
     Callback = function()
         refreshPredictorUI()
@@ -2127,7 +2149,7 @@ TabPredict:Button({
 })
 
 TabPredict:Button({
-    Title = "ðŸŒ Buka Prediksi di Web",
+    Title = "🌐 Buka Prediksi di Web",
     Icon = "globe",
     Color = Color3.fromRGB(56, 189, 248),
     Callback = function()
@@ -2149,7 +2171,7 @@ end)
 
 
 -- ====================================================================
--- ðŸŒ€ BACKGROUND LISTENERS (REALTIME EGG DETECTOR & AUTO REPORT)
+-- 🌀 BACKGROUND LISTENERS (REALTIME EGG DETECTOR & AUTO REPORT)
 -- ====================================================================
 
 -- 1. Realtime Steal Detector (Deteksi Egg Baru Masuk Backpack)
