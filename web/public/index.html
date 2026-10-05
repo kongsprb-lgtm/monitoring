@@ -1428,7 +1428,7 @@
                     </button>
 
                     <div class="detail-avatar-wrap">
-                        <img id="detailAvatar" src="" class="detail-avatar" alt="Avatar">
+                        <img id="detailAvatar" src="" class="detail-avatar" alt="Avatar" onerror="this.src='https://tr.rbxcdn.com/53eb9b17fe1432a809c73a13889b5006/150/150/AvatarHeadshot/Png'">
                         <div id="detailOnlineDot" class="acc-online-dot"></div>
                     </div>
 
@@ -1968,14 +1968,14 @@
 
         function detectRarity(name) {
             const n = String(name || '').toLowerCase();
-            if (n.includes('divine') || n.includes('godly') || n.includes('el maja') || n.includes('celestial') || n.includes('seraph') || n.includes('archangel')) return 'Divine';
+            if (n.includes('divine') || n.includes('godly') || n.includes('el maja') || n.includes('celestial') || n.includes('seraph') || n.includes('archangel') || n.includes('sunlion') || n.includes('skywhale')) return 'Divine';
             if (n.includes('eternal') || n.includes('hellfire') || n.includes('infernal')) return 'Eternal';
-            if (n.includes('secret') || n.includes('cosmic') || n.includes('riftborn') || n.includes('burner') || n.includes('trala') || n.includes('saturno') || n.includes('vacca') || n.includes('void') || n.includes('astral') || n.includes('dimension')) return 'Secret';
-            if (n.includes('mythic') || n.includes('kitsune') || n.includes('phoenix') || n.includes('oni tiger') || n.includes('gorilla king') || n.includes('skeleton boss') || n.includes('jellyfish') || n.includes('world eater') || n.includes('demon') || n.includes('hydra') || n.includes('cerberus')) return 'Mythic';
-            if (n.includes('legendary') || n.includes('dragon') || n.includes('pegasus') || n.includes('mosasaurus') || n.includes('skeleton horse') || n.includes('ankylosaurus') || n.includes('rhinotaur') || n.includes('abyss') || n.includes('riftwing') || n.includes('wyvern') || n.includes('griffin')) return 'Legendary';
-            if (n.includes('epic') || n.includes('volcano') || n.includes('titan') || n.includes('galaxy') || n.includes('dream') || n.includes('flame') || n.includes('wendigo') || n.includes('golem') || n.includes('thunder') || n.includes('storm')) return 'Epic';
-            if (n.includes('rare') || n.includes('cherry') || n.includes('warden') || n.includes('toro') || n.includes('mantis') || n.includes('mire') || n.includes('ice') || n.includes('frost') || n.includes('coral') || n.includes('crystal')) return 'Rare';
-            if (n.includes('uncommon') || n.includes('yeti') || n.includes('gorilla') || n.includes('wolf') || n.includes('bear') || n.includes('fox') || n.includes('panda') || n.includes('lion')) return 'Uncommon';
+            if (n.includes('secret') || n.includes('cosmic') || n.includes('riftborn') || n.includes('burner') || n.includes('trala') || n.includes('saturno') || n.includes('vacca') || n.includes('void') || n.includes('astral') || n.includes('dimension') || n.includes('biohazard') || n.includes('unstable') || n.includes('experiment')) return 'Secret';
+            if (n.includes('mythic') || n.includes('kitsune') || n.includes('phoenix') || n.includes('oni tiger') || n.includes('gorilla king') || n.includes('skeleton boss') || n.includes('jellyfish') || n.includes('world eater') || n.includes('demon') || n.includes('hydra') || n.includes('cerberus') || n.includes('spideron')) return 'Mythic';
+            if (n.includes('legendary') || n.includes('dragon') || n.includes('pegasus') || n.includes('mosasaurus') || n.includes('skeleton horse') || n.includes('ankylosaurus') || n.includes('rhinotaur') || n.includes('abyss') || n.includes('riftwing') || n.includes('wyvern') || n.includes('griffin') || n.includes('bladehide') || n.includes('winged lamb')) return 'Legendary';
+            if (n.includes('epic') || n.includes('volcano') || n.includes('titan') || n.includes('galaxy') || n.includes('dream') || n.includes('flame') || n.includes('wendigo') || n.includes('golem') || n.includes('thunder') || n.includes('storm') || n.includes('nightflame')) return 'Epic';
+            if (n.includes('rare') || n.includes('cherry') || n.includes('warden') || n.includes('toro') || n.includes('mantis') || n.includes('mire') || n.includes('ice') || n.includes('frost') || n.includes('coral') || n.includes('crystal') || n.includes('gargoyle') || n.includes('mutant')) return 'Rare';
+            if (n.includes('uncommon') || n.includes('yeti') || n.includes('gorilla') || n.includes('wolf') || n.includes('bear') || n.includes('fox') || n.includes('panda') || n.includes('lion') || n.includes('dreadscale')) return 'Uncommon';
             return 'Common';
         }
 

@@ -1,6 +1,6 @@
 --[[
     ===================================================================
-    🥚 Steal An Egg - Pure Account Monitoring & Webhook Tracker
+    ðŸ¥š Steal An Egg - Pure Account Monitoring & Webhook Tracker
     GitHub Repo: https://github.com/kongsprb-lgtm/monitoring
     ===================================================================
     Execute via Loadstring:
@@ -125,7 +125,7 @@ local function GetMutationsString(data)
 end
 
 -- ====================================================================
--- 📊 DATA COLLECTOR ENGINE (MULTI-SOURCE: sData + UI + LEADERSTATS)
+-- ðŸ“Š DATA COLLECTOR ENGINE (MULTI-SOURCE: sData + UI + LEADERSTATS)
 -- ====================================================================
 
 -- Helper membersihkan tag RichText dan whitespace
@@ -185,7 +185,8 @@ local NonEggKeywords = {
     "bring", "place", "charge", "open", "steal", "hold", "click", "press",
     "tap", "your", "the", "an", "buy", "sell", "use", "all items", "backpack",
     "search", "skip", "hatch", "equipped", "unequip", "level", "stats",
-    "infested", "machine", "altar", "teleport"
+    "infested", "machine", "altar", "teleport",
+    "you", "fused", "remove", "select", "selected", "fuse"
 }
 
 local function isRealEggName(name)
@@ -195,6 +196,8 @@ local function isRealEggName(name)
     if nLow == "egg" or nLow == "eggs" then return false end
     -- Tolak jika berupa angka
     if tonumber(name) or name:match("^%d+$") then return false end
+    -- Tolak sisa teks UI seperti "x Egg"
+    if nLow:match("^%a egg$") then return false end
 
     for _, kw in ipairs(NonEggKeywords) do
         if nLow:find("%f[%a]" .. kw .. "%f[%A]") then
@@ -205,6 +208,143 @@ local function isRealEggName(name)
     -- Wajib berakhiran atau mengandung kata "egg"
     if not nLow:find("egg") then return false end
     return true
+end
+
+-- ====================================================================
+-- ðŸ’¾ SAVE DATA RESOLVER (multi-path, tahan update game)
+-- ====================================================================
+local CachedSaveModule = nil
+local LastSaveSearch = 0
+SaveDataStatus = "Belum dicek"
+
+local function trySaveModule(mod)
+    if not mod or not mod:IsA("ModuleScript") then return nil end
+    local ok, lib = pcall(require, mod)
+    if not ok or type(lib) ~= "table" then return nil end
+    for _, fnName in ipairs({ "Get", "get", "GetData" }) do
+        local fn = lib[fnName]
+        if type(fn) == "function" then
+            local ok2, data = pcall(fn)
+            if ok2 and type(data) == "table" then return data end
+            ok2, data = pcall(fn, lib)
+            if ok2 and type(data) == "table" then return data end
+        end
+    end
+    if type(lib.Data) == "table" then return lib.Data end
+    return nil
+end
+
+local function isValidSave(d)
+    return type(d) == "table" and (type(d.EggInventory) == "table" or type(d.Inventory) == "table")
+end
+
+local function getSaveData()
+    if CachedSaveModule then
+        local d = trySaveModule(CachedSaveModule)
+        if isValidSave(d) then return d end
+        CachedSaveModule = nil
+    end
+    if os.clock() - LastSaveSearch < 20 and LastSaveSearch > 0 then return nil end
+    LastSaveSearch = os.clock()
+
+    local candidates = {}
+    local shared = ReplicatedStorage:FindFirstChild("Shared")
+    if shared and shared:FindFirstChild("Save") then table.insert(candidates, shared.Save) end
+    local wanted = { Save = true, SaveData = true, PlayerSave = true, ClientSave = true, PlayerData = true, DataClient = true }
+    pcall(function()
+        for _, d in ipairs(ReplicatedStorage:GetDescendants()) do
+            if d:IsA("ModuleScript") and wanted[d.Name] then table.insert(candidates, d) end
+        end
+    end)
+    for _, mod in ipairs(candidates) do
+        local d = trySaveModule(mod)
+        if isValidSave(d) then
+            CachedSaveModule = mod
+            SaveDataStatus = "OK (" .. mod:GetFullName() .. ")"
+            return d
+        end
+    end
+    SaveDataStatus = "GAGAL - modul Save tidak ditemukan (" .. #candidates .. " kandidat)"
+    return nil
+end
+
+-- ====================================================================
+-- ðŸ–¼ï¸ ASSET LOOKUP (Rarity + Icon berdasarkan nama dari Data.Assets)
+-- ====================================================================
+local AssetLookupCache = nil
+
+local function extractIconId(t)
+    if type(t) ~= "table" then return nil end
+    for _, k in ipairs({ "Icon", "Image", "Thumbnail", "ImageId", "IconId", "Decal", "Texture" }) do
+        local v = t[k]
+        if v ~= nil and type(v) ~= "table" then
+            local id = tostring(v):match("%d+")
+            if id and #id >= 6 then return id end
+        end
+    end
+    for _, v in pairs(t) do
+        if type(v) == "string" and v:find("rbxassetid://") then
+            local id = v:match("%d+")
+            if id and #id >= 6 then return id end
+        end
+    end
+    return nil
+end
+
+local function rarityToString(r)
+    if type(r) == "table" then return r.DisplayName or r.Title or r.Name end
+    if type(r) == "string" then return r end
+    return nil
+end
+
+local function buildAssetLookup()
+    if AssetLookupCache then return AssetLookupCache end
+    local map = {}
+    pcall(function()
+        local Assets = require(ReplicatedStorage.Data.Assets)
+        for key, data in pairs(Assets.Directory or {}) do
+            if type(data) == "table" then
+                local egg = type(data.Egg) == "table" and data.Egg or nil
+                local petRarity = rarityToString(data.Rarity) or (egg and rarityToString(egg.Rarity))
+                local petIcon = extractIconId(data)
+                local petInfo = { rarity = petRarity, icon = petIcon, rate = tonumber(data.EarnRate) }
+                local eggInfo = {
+                    rarity = (egg and rarityToString(egg.Rarity)) or petRarity,
+                    icon = (egg and extractIconId(egg)) or petIcon
+                }
+                for _, n in ipairs({ tostring(key), data.DisplayName, data.Name }) do
+                    if type(n) == "string" and n ~= "" then
+                        local low = n:lower()
+                        map["pet:" .. low] = map["pet:" .. low] or petInfo
+                        local eggKey = low:find("egg$") and low or (low .. " egg")
+                        map["egg:" .. eggKey] = map["egg:" .. eggKey] or eggInfo
+                    end
+                end
+                if egg then
+                    local en = egg.Name or egg.DisplayName or egg.Title
+                    if type(en) == "string" and en ~= "" then
+                        local el = en:lower()
+                        if not el:find("egg") then el = el .. " egg" end
+                        map["egg:" .. el] = eggInfo
+                    end
+                end
+            end
+        end
+    end)
+    if next(map) then AssetLookupCache = map end
+    return map
+end
+
+local function lookupAsset(kind, name)
+    local low = tostring(name or ""):lower():gsub("^%s+", ""):gsub("%s+$", "")
+    local map = buildAssetLookup()
+    local info = map[kind .. ":" .. low]
+    if not info and kind == "egg" then
+        -- Coba tanpa kata modifier depan (misal "Scrambled Biohazard Egg" -> "Biohazard Egg")
+        local stripped = low:gsub("^%a+%s+", "", 1)
+        info = map["egg:" .. stripped]
+    end
+    return info
 end
 
 -- 1. Ambil Money, Money/s & Speed Sekarang
@@ -224,7 +364,7 @@ local function getPlayerCurrencies()
         data.ping = pingNum and (math.floor(tonumber(pingNum)) .. " ms") or "N/A"
     end)
 
-    -- 🔍 PRIORITAS SPEED 1: Leaderstats (Nilai Paling Akurat & Konsisten, misal 187770000000 -> "187.77 B")
+    -- ðŸ” PRIORITAS SPEED 1: Leaderstats (Nilai Paling Akurat & Konsisten, misal 187770000000 -> "187.77 B")
     pcall(function()
         local ls = LocalPlayer:FindFirstChild("leaderstats")
         if ls then
@@ -235,7 +375,7 @@ local function getPlayerCurrencies()
         end
     end)
 
-    -- 🔍 PRIORITAS MONEY & SPEED UI (HUD Pojok Kiri Bawah: "$50.2Qa" / "$50Qa" & "187.7B")
+    -- ðŸ” PRIORITAS MONEY & SPEED UI (HUD Pojok Kiri Bawah: "$50.2Qa" / "$50Qa" & "187.7B")
     pcall(function()
         local pg = LocalPlayer:FindFirstChild("PlayerGui")
         if not pg then return end
@@ -320,12 +460,10 @@ local function getPlayerCurrencies()
         end
     end)
 
-    -- 🔍 FALLBACK 1: Baca Cash dari Save Data (sData) jika UI belum terbaca
+    -- ðŸ” FALLBACK 1: Baca Cash dari Save Data (sData) jika UI belum terbaca
     if data.money == "N/A" then
         pcall(function()
-            local saveMod = ReplicatedStorage:FindFirstChild("Shared") and ReplicatedStorage.Shared:FindFirstChild("Save")
-            if not saveMod then return end
-            local sData = require(saveMod).Get()
+            local sData = getSaveData()
             if not sData then return end
 
             local candidateKeys = {"cash", "money", "coins", "coin", "gold", "currency", "currencies", "stats", "balance"}
@@ -359,7 +497,7 @@ local function getPlayerCurrencies()
         end)
     end
 
-    -- 🔍 FALLBACK 2: Leaderstats
+    -- ðŸ” FALLBACK 2: Leaderstats
     pcall(function()
         local ls = LocalPlayer:FindFirstChild("leaderstats")
         if ls then
@@ -400,9 +538,10 @@ local function getInventorySummary()
     local uiActiveCount = 0
     local uiPetsInKandang = {}
     local unequipButtonCount = 0
+    local uiEggIcons = {}
 
     -- ================================================================
-    -- 🔍 SUMBER 1: BACA DARI UI (PlayerGui) - SUMBER PALING AKURAT & REALTIME
+    -- ðŸ” SUMBER 1: BACA DARI UI (PlayerGui) - SUMBER PALING AKURAT & REALTIME
     -- ================================================================
     pcall(function()
         local pg = LocalPlayer:FindFirstChild("PlayerGui")
@@ -441,6 +580,19 @@ local function getInventorySummary()
                         local eggMatch = cleanEgg:match("([%a%s]+Egg)")
                         if eggMatch and isRealEggName(eggMatch) then
                             uiEggsInBackpack[eggMatch] = (uiEggsInBackpack[eggMatch] or 0) + 1
+                            if not uiEggIcons[eggMatch] and desc.Parent then
+                                pcall(function()
+                                    for _, sib in ipairs(desc.Parent:GetDescendants()) do
+                                        if (sib:IsA("ImageLabel") or sib:IsA("ImageButton")) and sib.Image ~= "" then
+                                            local id = tostring(sib.Image):match("%d+")
+                                            if id and #id >= 6 then
+                                                uiEggIcons[eggMatch] = id
+                                                break
+                                            end
+                                        end
+                                    end
+                                end)
+                            end
                         end
                     end
                 end
@@ -495,12 +647,10 @@ local function getInventorySummary()
     end)
 
     -- ================================================================
-    -- 🔍 SUMBER 2: BACA DARI SAVE DATA GAME (sData)
+    -- ðŸ” SUMBER 2: BACA DARI SAVE DATA GAME (sData)
     -- ================================================================
     pcall(function()
-        local saveMod = ReplicatedStorage:FindFirstChild("Shared") and ReplicatedStorage.Shared:FindFirstChild("Save")
-        if not saveMod then return end
-        local sData = require(saveMod).Get()
+        local sData = getSaveData()
         if not sData then return end
 
         local Assets = nil
@@ -523,7 +673,7 @@ local function getInventorySummary()
                             if type(pData.Egg) == "table" then
                                 eggDisplayName = pData.Egg.Name or pData.Egg.DisplayName or pData.Egg.Title
                                 local r = pData.Egg.Rarity
-                                rarityStr = type(r) == "table" and (r.Title or r.Name or r.DisplayName) or (type(r) == "string" and r)
+                                rarityStr = rarityToString(r)
                                 iconAssetId = pData.Egg.Icon or pData.Egg.Image or pData.Egg.Thumbnail
                             elseif type(pData.Egg) == "string" then
                                 eggDisplayName = pData.Egg
@@ -534,7 +684,7 @@ local function getInventorySummary()
                         end
                         if not rarityStr then
                             local r = pData.Rarity or rec.Rarity
-                            rarityStr = type(r) == "table" and (r.Title or r.Name or r.DisplayName) or (type(r) == "string" and r)
+                            rarityStr = rarityToString(r)
                         end
                         if not iconAssetId then
                             iconAssetId = pData.Icon or pData.Image or pData.Thumbnail or pData.AssetId or rec.Icon or rec.Image
@@ -610,7 +760,7 @@ local function getInventorySummary()
                         sDataPetBpCount = sDataPetBpCount + 1
                         local pData = Assets and Assets.Directory and Assets.Directory[cat]
                         local r = item.Rarity or (pData and pData.Rarity)
-                        local rarityStr = type(r) == "table" and (r.Title or r.Name or r.DisplayName) or (type(r) == "string" and r)
+                        local rarityStr = rarityToString(r)
                         local iconAssetId = item.Icon or item.Image or item.Thumbnail or (pData and (pData.Icon or pData.Image or pData.Thumbnail))
                         local cleanIcon = iconAssetId and tostring(iconAssetId):match("%d+") or nil
 
@@ -680,7 +830,7 @@ local function getInventorySummary()
     end)
 
     -- ================================================================
-    -- 🔄 SINKRONISASI AKHIR DENGAN PRIORITAS UI
+    -- ðŸ”„ SINKRONISASI AKHIR DENGAN PRIORITAS UI
     -- ================================================================
 
     -- 1. Sync Pet di Kandang (Active)
@@ -722,16 +872,50 @@ local function getInventorySummary()
         summary.petBackpackCount = uiPetCount
     end
 
-    -- 4. Fallback Best Pet jika sData.Inventory belum terisi
+    -- 4. Lengkapi rarity & icon dari Data.Assets berdasarkan nama (tetap jalan walau sData gagal)
+    for eggName, _ in pairs(summary.eggsInBackpack) do
+        local meta = summary.eggMeta[eggName] or {}
+        if not meta.rarity or not meta.icon then
+            local info = lookupAsset("egg", eggName)
+            if info then
+                meta.rarity = meta.rarity or info.rarity
+                meta.icon = meta.icon or info.icon
+            end
+        end
+        if not meta.icon and uiEggIcons[eggName] then meta.icon = uiEggIcons[eggName] end
+        if meta.rarity or meta.icon then summary.eggMeta[eggName] = meta end
+    end
+    for _, petTbl in ipairs({ summary.petsInKandang, summary.petsInBackpack }) do
+        for petName, _ in pairs(petTbl) do
+            local meta = summary.petMeta[petName] or {}
+            if not meta.rarity or not meta.icon then
+                local info = lookupAsset("pet", petName)
+                if info then
+                    meta.rarity = meta.rarity or info.rarity
+                    meta.icon = meta.icon or info.icon
+                    meta.rate = info.rate
+                end
+            end
+            if meta.rarity or meta.icon then summary.petMeta[petName] = meta end
+        end
+    end
+    if summary.bestPet and not summary.bestPet.icon then
+        local info = lookupAsset("pet", summary.bestPet.name)
+        if info then summary.bestPet.icon = info.icon end
+    end
+
+    -- 5. Fallback Best Pet jika sData.Inventory belum terisi
     if not summary.bestPet then
         for cat, meta in pairs(summary.petMeta) do
             local r = (meta and meta.rarity) or "Common"
-            local rate = 0
-            pcall(function()
-                local Assets = require(ReplicatedStorage.Data.Assets)
-                local pData = Assets and Assets.Directory and Assets.Directory[cat]
-                if pData and pData.EarnRate then rate = pData.EarnRate end
-            end)
+            local rate = (meta and tonumber(meta.rate)) or 0
+            if rate == 0 then
+                pcall(function()
+                    local Assets = require(ReplicatedStorage.Data.Assets)
+                    local pData = Assets and Assets.Directory and Assets.Directory[cat]
+                    if pData and pData.EarnRate then rate = pData.EarnRate end
+                end)
+            end
             if not summary.bestPet or rate > (summary.bestPet.rawRate or 0) then
                 summary.bestPet = {
                     name = cat,
@@ -745,11 +929,14 @@ local function getInventorySummary()
         end
     end
 
+    -- Bersihkan field internal sebelum dikirim
+    for _, meta in pairs(summary.petMeta) do meta.rate = nil end
+
     return summary
 end
 
 -- ====================================================================
--- 🔮 PREDICTOR ENGINE (RNG & DROP TABLE SIMULATOR)
+-- ðŸ”® PREDICTOR ENGINE (RNG & DROP TABLE SIMULATOR)
 -- ====================================================================
 local AreaData = {}
 local AssetRarityMap = {}
@@ -983,7 +1170,7 @@ local function getPredictionSummary()
 end
 
 -- ====================================================================
--- 🌐 WEBHOOK SENDERS
+-- ðŸŒ WEBHOOK SENDERS
 -- ====================================================================
 
 -- Kirim Laporan Statistik ke Web Dashboard (p4kong.site)
@@ -1025,7 +1212,8 @@ local function sendWebStatusReport()
         eggMeta = inv.eggMeta,
         petBackpackCount = inv.petBackpackCount,
         petsInBackpack = inv.petsInBackpack,
-        petMeta = inv.petMeta
+        petMeta = inv.petMeta,
+        saveStatus = SaveDataStatus
     }
 
     local success, err = pcall(function()
@@ -1072,13 +1260,13 @@ local function sendPeriodicStatusReport()
         end
 
         table.insert(embedFields, {
-            name = "💰 Money Sekarang",
+            name = "ðŸ’° Money Sekarang",
             value = "```" .. tostring(currencies.money) .. "```",
             inline = true
         })
 
         table.insert(embedFields, {
-            name = "💸 Money / Detik",
+            name = "ðŸ’¸ Money / Detik",
             value = "```" .. tostring(mps) .. "```",
             inline = true
         })
@@ -1087,8 +1275,8 @@ local function sendPeriodicStatusReport()
     -- Best Pet (Jika Ditemukan)
     if inv.bestPet then
         table.insert(embedFields, {
-            name = "👑 Best Pet",
-            value = string.format("```%s (%s • %s)```", inv.bestPet.name, inv.bestPet.rarity, inv.bestPet.earnRate),
+            name = "ðŸ‘‘ Best Pet",
+            value = string.format("```%s (%s â€¢ %s)```", inv.bestPet.name, inv.bestPet.rarity, inv.bestPet.earnRate),
             inline = true
         })
     end
@@ -1096,7 +1284,7 @@ local function sendPeriodicStatusReport()
     -- 2. Speed Sekarang (Jika Dipilih)
     if Config.Track_Speed then
         table.insert(embedFields, {
-            name = "⚡ Speed Sekarang",
+            name = "âš¡ Speed Sekarang",
             value = "```" .. tostring(currencies.speed) .. "```",
             inline = true
         })
@@ -1105,7 +1293,7 @@ local function sendPeriodicStatusReport()
     -- 3. Level Info
     if currencies.level ~= "N/A" then
         table.insert(embedFields, {
-            name = "🎖️ Level",
+            name = "ðŸŽ–ï¸ Level",
             value = "```" .. tostring(currencies.level) .. "```",
             inline = true
         })
@@ -1117,14 +1305,14 @@ local function sendPeriodicStatusReport()
         local items = {}
         for name, count in pairs(inv.petsInKandang) do
             local c = type(count) == "table" and (count.count or 1) or tonumber(count) or 1
-            table.insert(items, string.format("• %s: `x%d`", name, c))
+            table.insert(items, string.format("â€¢ %s: `x%d`", name, c))
             if #items >= 15 then break end
         end
         if #items > 0 then
             kandangDetail = kandangDetail .. "\n" .. table.concat(items, "\n")
         end
         table.insert(embedFields, {
-            name = "🏡 Pet di Kandang (Active)",
+            name = "ðŸ¡ Pet di Kandang (Active)",
             value = kandangDetail,
             inline = false
         })
@@ -1136,14 +1324,14 @@ local function sendPeriodicStatusReport()
         local items = {}
         for name, count in pairs(inv.eggsInBackpack) do
             local c = type(count) == "table" and (count.count or 1) or tonumber(count) or 1
-            table.insert(items, string.format("• %s: `x%d`", name, c))
+            table.insert(items, string.format("â€¢ %s: `x%d`", name, c))
             if #items >= 12 then break end
         end
         if #items > 0 then
             eggDetail = eggDetail .. "\n" .. table.concat(items, "\n")
         end
         table.insert(embedFields, {
-            name = "🎒 Egg di Backpack",
+            name = "ðŸŽ’ Egg di Backpack",
             value = eggDetail,
             inline = false
         })
@@ -1155,14 +1343,14 @@ local function sendPeriodicStatusReport()
         local items = {}
         for name, count in pairs(inv.petsInBackpack) do
             local c = type(count) == "table" and (count.count or 1) or tonumber(count) or 1
-            table.insert(items, string.format("• %s: `x%d`", name, c))
+            table.insert(items, string.format("â€¢ %s: `x%d`", name, c))
             if #items >= 12 then break end
         end
         if #items > 0 then
             petDetail = petDetail .. "\n" .. table.concat(items, "\n")
         end
         table.insert(embedFields, {
-            name = "🐾 Pet di Backpack",
+            name = "ðŸ¾ Pet di Backpack",
             value = petDetail,
             inline = false
         })
@@ -1170,12 +1358,12 @@ local function sendPeriodicStatusReport()
 
     -- Field Info Server & Durasi
     table.insert(embedFields, {
-        name = "⏳ Durasi Monitoring",
+        name = "â³ Durasi Monitoring",
         value = uptimeStr,
         inline = true
     })
     table.insert(embedFields, {
-        name = "📶 Ping",
+        name = "ðŸ“¶ Ping",
         value = currencies.ping,
         inline = true
     })
@@ -1188,14 +1376,14 @@ local function sendPeriodicStatusReport()
         username = "Steal An Egg Monitor",
         avatar_url = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. LocalPlayer.UserId .. "&width=150&height=150&format=png",
         embeds = {{
-            title = "📊 Laporan Akun: " .. LocalPlayer.DisplayName .. " (@" .. LocalPlayer.Name .. ")",
-            description = "Game: **Steal An Egg** • Status: 🟢 **Monitoring Aktif**",
+            title = "ðŸ“Š Laporan Akun: " .. LocalPlayer.DisplayName .. " (@" .. LocalPlayer.Name .. ")",
+            description = "Game: **Steal An Egg** â€¢ Status: ðŸŸ¢ **Monitoring Aktif**",
             color = 3447003,
             fields = embedFields,
             thumbnail = {
                 url = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. LocalPlayer.UserId .. "&width=150&height=150&format=png"
             },
-            footer = { text = "P4kong x SysHub Monitor • Auto Report" },
+            footer = { text = "P4kong x SysHub Monitor â€¢ Auto Report" },
             timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
         }}
     }
@@ -1280,17 +1468,17 @@ local function sendEggStealEvent(cat, rec)
                 name = "Steal An Egg Tracker",
                 icon_url = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. LocalPlayer.UserId .. "&width=150&height=150&format=png"
             },
-            title = "🕵️ Telur Berhasil Dicuri ke Backpack!",
+            title = "ðŸ•µï¸ Telur Berhasil Dicuri ke Backpack!",
             color = colorDecimal,
             fields = {
-                { name = "👤 Player", value = "```" .. LocalPlayer.Name .. "```", inline = false },
-                { name = "🐾 Spesies", value = "```" .. displayName .. "```", inline = true },
-                { name = "💎 Rarity", value = "```" .. rarityName .. "```", inline = true },
-                { name = "💸 Earn Rate", value = "```$" .. FormatNumber(earnRate) .. "/s```", inline = true },
-                { name = "📊 Multiplier Scale", value = "```" .. formattedScale .. "x```", inline = true },
-                { name = "🧬 Mutasi", value = "```" .. mutationsStr .. "```", inline = true }
+                { name = "ðŸ‘¤ Player", value = "```" .. LocalPlayer.Name .. "```", inline = false },
+                { name = "ðŸ¾ Spesies", value = "```" .. displayName .. "```", inline = true },
+                { name = "ðŸ’Ž Rarity", value = "```" .. rarityName .. "```", inline = true },
+                { name = "ðŸ’¸ Earn Rate", value = "```$" .. FormatNumber(earnRate) .. "/s```", inline = true },
+                { name = "ðŸ“Š Multiplier Scale", value = "```" .. formattedScale .. "x```", inline = true },
+                { name = "ðŸ§¬ Mutasi", value = "```" .. mutationsStr .. "```", inline = true }
             },
-            footer = { text = "Monitoring • Event Egg Didapat" },
+            footer = { text = "Monitoring â€¢ Event Egg Didapat" },
             timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
         }}
     }
@@ -1308,7 +1496,7 @@ local function sendEggStealEvent(cat, rec)
 end
 
 -- ====================================================================
--- 🖥️ WINDUI INTERFACE (CLEAN & USER CONFIGURABLE)
+-- ðŸ–¥ï¸ WINDUI INTERFACE (CLEAN & USER CONFIGURABLE)
 -- ====================================================================
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 
@@ -1347,7 +1535,7 @@ local Window = WindUI:CreateWindow({
 -- TAB 1: WEB MONITORING (p4kong.site/monitoringjoki)
 local TabWeb = Window:Tab({ Title = "Web Monitor", Icon = "globe", Locked = false })
 
-TabWeb:Section({ Title = "🌐 Monitoring Online di p4kong.site", TextSize = 18 })
+TabWeb:Section({ Title = "ðŸŒ Monitoring Online di p4kong.site", TextSize = 18 })
 
 TabWeb:Toggle({
     Title = "Aktifkan Monitoring Web (p4kong.site)",
@@ -1366,11 +1554,11 @@ TabWeb:Toggle({
 
 TabWeb:Paragraph({
     Title = "Akses Dashboard Joki Online",
-    Desc = "🌐 URL: https://p4kong.site/monitoringjoki\n🔑 PIN Akses: 1802\n\nBuka link di browser HP atau PC untuk memantau semua akun joki secara realtime."
+    Desc = "ðŸŒ URL: https://p4kong.site/monitoringjoki\nðŸ”‘ PIN Akses: 1802\n\nBuka link di browser HP atau PC untuk memantau semua akun joki secara realtime."
 })
 
 TabWeb:Button({
-    Title = "⚡ Kirim Update ke Web Sekarang",
+    Title = "âš¡ Kirim Update ke Web Sekarang",
     Icon = "send",
     Color = Color3.fromRGB(56, 189, 248),
     Callback = function()
@@ -1384,7 +1572,7 @@ TabWeb:Button({
 })
 
 TabWeb:Button({
-    Title = "📋 Salin Link Dashboard (p4kong.site)",
+    Title = "ðŸ“‹ Salin Link Dashboard (p4kong.site)",
     Icon = "copy",
     Color = Color3.fromRGB(16, 185, 129),
     Callback = function()
@@ -1425,7 +1613,7 @@ TabWebhook:Input({
 })
 
 TabWebhook:Divider()
-TabWebhook:Section({ Title = "⏱️ Jadwal Update Statistik Akun", TextSize = 18 })
+TabWebhook:Section({ Title = "â±ï¸ Jadwal Update Statistik Akun", TextSize = 18 })
 
 -- Dropdown Pilihan Menit Preset
 TabWebhook:Dropdown({
@@ -1465,7 +1653,7 @@ TabWebhook:Slider({
 
 -- Tombol Aksi Update & Reset
 TabWebhook:Button({
-    Title = "⚡ Update & Kirim Statistik Sekarang",
+    Title = "âš¡ Update & Kirim Statistik Sekarang",
     Icon = "send",
     Color = Color3.fromRGB(0, 255, 127),
     Callback = function()
@@ -1480,7 +1668,7 @@ TabWebhook:Button({
 })
 
 TabWebhook:Button({
-    Title = "🔄 Reset Timer Laporan Berkala",
+    Title = "ðŸ”„ Reset Timer Laporan Berkala",
     Icon = "timer",
     Color = Color3.fromRGB(56, 189, 248),
     Callback = function()
@@ -1494,7 +1682,7 @@ TabWebhook:Button({
 })
 
 TabWebhook:Divider()
-TabWebhook:Section({ Title = "📊 Pilihan Data yang Dimasukkan ke Webhook", TextSize = 18 })
+TabWebhook:Section({ Title = "ðŸ“Š Pilihan Data yang Dimasukkan ke Webhook", TextSize = 18 })
 
 TabWebhook:Toggle({
     Title = "Egg yang di dapet (Realtime Saat Mencuri)",
@@ -1593,16 +1781,17 @@ local function refreshStatsUI()
         end
     end
 
-    local bestPetStr = inv.bestPet and string.format("%s (%s • %s)", inv.bestPet.name, inv.bestPet.rarity, inv.bestPet.earnRate) or "N/A"
+    local bestPetStr = inv.bestPet and string.format("%s (%s â€¢ %s)", inv.bestPet.name, inv.bestPet.rarity, inv.bestPet.earnRate) or "N/A"
 
     local desc = string.format(
-        "💰 Money: %s\n💸 Money/s: %s\n⚡ Speed: %s\n🎖️ Level: %s\n👑 Best Pet: %s\n\n🏡 Pet di Kandang: %s\n🎒 Telur di Backpack: %d\n🐾 Pet di Backpack: %d\n\n⏳ Uptime: %s\n📶 Ping: %s\n⏱️ Update Berikutnya: %d detik lagi",
+        "ðŸ’° Money: %s\nðŸ’¸ Money/s: %s\nâš¡ Speed: %s\nðŸŽ–ï¸ Level: %s\nðŸ‘‘ Best Pet: %s\n\nðŸ¡ Pet di Kandang: %s\nðŸŽ’ Telur di Backpack: %d\nðŸ¾ Pet di Backpack: %d\n\nâ³ Uptime: %s\nðŸ“¶ Ping: %s\nâ±ï¸ Update Berikutnya: %d detik lagi",
         cur.money, mps, cur.speed, cur.level, bestPetStr,
         petKandangStr,
         inv.eggBackpackCount, inv.petBackpackCount,
         formatDuration(os.time() - ScriptStartTime), cur.ping,
         remaining
     )
+    desc = desc .. "\nðŸ’¾ Save Data: " .. tostring(SaveDataStatus)
     StatParagraph:SetDesc(desc)
 end
 
@@ -1617,7 +1806,7 @@ TabStats:Button({
 
 -- TAB 4: LIVE PREDICTOR (EGG SPAWN PREDICTION)
 local TabPredict = Window:Tab({ Title = "Predictor", Icon = "clock", Locked = false })
-TabPredict:Section({ Title = "🔮 Live Egg Spawn Predictor", TextSize = 18 })
+TabPredict:Section({ Title = "ðŸ”® Live Egg Spawn Predictor", TextSize = 18 })
 
 TabPredict:Paragraph({
     Title = "SysHub x P4kong Prediction Engine",
@@ -1666,7 +1855,7 @@ local function refreshPredictorUI()
 
     local textParts = {}
     if #divineList > 0 then
-        table.insert(textParts, "👑 DIVINE")
+        table.insert(textParts, "ðŸ‘‘ DIVINE")
         for i = 1, math.min(#divineList, 15) do
             table.insert(textParts, divineList[i])
         end
@@ -1674,7 +1863,7 @@ local function refreshPredictorUI()
 
     if #eternalList > 0 then
         if #textParts > 0 then table.insert(textParts, "") end
-        table.insert(textParts, "🔥 ETERNAL")
+        table.insert(textParts, "ðŸ”¥ ETERNAL")
         for i = 1, math.min(#eternalList, 15) do
             table.insert(textParts, eternalList[i])
         end
@@ -1688,7 +1877,7 @@ local function refreshPredictorUI()
 end
 
 TabPredict:Button({
-    Title = "🔄 Refresh Prediksi In-Game",
+    Title = "ðŸ”„ Refresh Prediksi In-Game",
     Icon = "refresh-cw",
     Callback = function()
         refreshPredictorUI()
@@ -1697,7 +1886,7 @@ TabPredict:Button({
 })
 
 TabPredict:Button({
-    Title = "🌐 Buka Prediksi di Web",
+    Title = "ðŸŒ Buka Prediksi di Web",
     Icon = "globe",
     Color = Color3.fromRGB(56, 189, 248),
     Callback = function()
@@ -1719,7 +1908,7 @@ end)
 
 
 -- ====================================================================
--- 🌀 BACKGROUND LISTENERS (REALTIME EGG DETECTOR & AUTO REPORT)
+-- ðŸŒ€ BACKGROUND LISTENERS (REALTIME EGG DETECTOR & AUTO REPORT)
 -- ====================================================================
 
 -- 1. Realtime Steal Detector (Deteksi Egg Baru Masuk Backpack)
@@ -1729,9 +1918,7 @@ task.spawn(function()
 
     while task.wait(1.5) do
         pcall(function()
-            local saveMod = ReplicatedStorage:FindFirstChild("Shared") and ReplicatedStorage.Shared:FindFirstChild("Save")
-            if not saveMod then return end
-            local sData = require(saveMod).Get()
+            local sData = getSaveData()
             if not sData or not sData.EggInventory then return end
 
             if firstRun then
