@@ -180,18 +180,34 @@ local function isRealPetName(name)
     return true
 end
 
--- Blacklist kata-kata yang BUKAN nama telur (quest, action, UI prompts)
+---- Blacklist kata-kata yang BUKAN nama telur (quest, action, UI prompts, mesin incubator)
+local FakeEggNames = {
+    ["current egg"] = true,
+    ["growing egg"] = true,
+    ["random scrambled egg"] = true,
+    ["scrambled egg"] = true,
+    ["next egg"] = true,
+    ["previous egg"] = true,
+    ["hatch egg"] = true,
+    ["open egg"] = true,
+    ["steal egg"] = true,
+    ["equip egg"] = true,
+    ["unequip egg"] = true
+}
+
 local NonEggKeywords = {
     "bring", "place", "charge", "open", "steal", "hold", "click", "press",
     "tap", "your", "the", "an", "buy", "sell", "use", "all items", "backpack",
     "search", "skip", "hatch", "equipped", "unequip", "level", "stats",
-    "infested", "machine", "altar", "teleport",
+    "infested", "machine", "altar", "teleport", "current", "growing",
     "you", "fused", "remove", "select", "selected", "fuse"
 }
 
 local function isRealEggName(name)
     if type(name) ~= "string" or #name < 4 then return false end
     local nLow = name:lower():gsub("^%s+", ""):gsub("%s+$", "")
+    -- Tolak jika masuk daftar nama palsu UI mesin incubator
+    if FakeEggNames[nLow] then return false end
     -- Tolak jika kata umum "Egg" atau "Eggs" saja
     if nLow == "egg" or nLow == "eggs" then return false end
     -- Tolak jika berupa angka
@@ -211,31 +227,54 @@ local function isRealEggName(name)
 end
 
 -- ====================================================================
--- ðŸ’¾ SAVE DATA RESOLVER (multi-path, tahan update game)
+-- 💾 SAVE DATA RESOLVER (multi-path, CoreProfileManager + Shared.Save)
 -- ====================================================================
 local CachedSaveModule = nil
 local LastSaveSearch = 0
 SaveDataStatus = "Belum dicek"
 
+local function isValidSave(d)
+    return type(d) == "table" and (
+        type(d.EggInventory) == "table" or 
+        type(d.Inventory) == "table" or 
+        type(d.GearInventory) == "table" or 
+        type(d.TrailInventory) == "table"
+    )
+end
+
 local function trySaveModule(mod)
     if not mod or not mod:IsA("ModuleScript") then return nil end
     local ok, lib = pcall(require, mod)
     if not ok or type(lib) ~= "table" then return nil end
-    for _, fnName in ipairs({ "Get", "get", "GetData" }) do
+
+    for _, fnName in ipairs({ "GetProfile", "Get", "get", "GetData", "GetPlayerData", "GetClientProfile", "GetLocalProfile" }) do
         local fn = lib[fnName]
         if type(fn) == "function" then
-            local ok2, data = pcall(fn)
-            if ok2 and type(data) == "table" then return data end
-            ok2, data = pcall(fn, lib)
-            if ok2 and type(data) == "table" then return data end
+            for _, arg in ipairs({ LocalPlayer, nil }) do
+                local ok2, data = pcall(fn, arg)
+                if ok2 and isValidSave(data) then return data end
+                ok2, data = pcall(fn, lib, arg)
+                if ok2 and isValidSave(data) then return data end
+            end
         end
     end
-    if type(lib.Data) == "table" then return lib.Data end
-    return nil
-end
 
-local function isValidSave(d)
-    return type(d) == "table" and (type(d.EggInventory) == "table" or type(d.Inventory) == "table")
+    for _, prop in ipairs({ "Data", "Profile", "CurrentProfile", "LocalProfile", "PlayerData" }) do
+        local d = lib[prop]
+        if isValidSave(d) then return d end
+    end
+
+    if type(lib.Profiles) == "table" then
+        for _, k in ipairs({ LocalPlayer, LocalPlayer.UserId, LocalPlayer.Name }) do
+            local p = lib.Profiles[k]
+            if type(p) == "table" then
+                if isValidSave(p.Data) then return p.Data end
+                if isValidSave(p) then return p end
+            end
+        end
+    end
+
+    return nil
 end
 
 local function getSaveData()
@@ -248,14 +287,39 @@ local function getSaveData()
     LastSaveSearch = os.clock()
 
     local candidates = {}
+
+    -- 1. Prioritaskan CoreProfileManager dari ReplicatedStorage.Shared.Modules
+    local sharedMod = ReplicatedStorage:FindFirstChild("Shared") and ReplicatedStorage.Shared:FindFirstChild("Modules")
+    if sharedMod and sharedMod:FindFirstChild("CoreProfileManager") then
+        table.insert(candidates, sharedMod.CoreProfileManager)
+    end
+
+    -- 2. Cek ReplicatedStorage.Shared.Save
     local shared = ReplicatedStorage:FindFirstChild("Shared")
-    if shared and shared:FindFirstChild("Save") then table.insert(candidates, shared.Save) end
-    local wanted = { Save = true, SaveData = true, PlayerSave = true, ClientSave = true, PlayerData = true, DataClient = true }
+    if shared and shared:FindFirstChild("Save") then
+        table.insert(candidates, shared.Save)
+    end
+
+    -- 3. Cari modul penyimpan profil lainnya
+    local wanted = { 
+        CoreProfileManager = true,
+        Save = true, 
+        SaveData = true, 
+        PlayerSave = true, 
+        ClientSave = true, 
+        PlayerData = true, 
+        DataClient = true,
+        ProfileManager = true,
+        ClientProfile = true
+    }
     pcall(function()
         for _, d in ipairs(ReplicatedStorage:GetDescendants()) do
-            if d:IsA("ModuleScript") and wanted[d.Name] then table.insert(candidates, d) end
+            if d:IsA("ModuleScript") and wanted[d.Name] then 
+                table.insert(candidates, d) 
+            end
         end
     end)
+
     for _, mod in ipairs(candidates) do
         local d = trySaveModule(mod)
         if isValidSave(d) then
@@ -269,13 +333,19 @@ local function getSaveData()
 end
 
 -- ====================================================================
--- ðŸ–¼ï¸ ASSET LOOKUP (Rarity + Icon berdasarkan nama dari Data.Assets)
+-- 🖼️ ASSET LOOKUP (Data.Assets.Configs + Data.Areas.Configs + Data.Rarity)
 -- ====================================================================
 local AssetLookupCache = nil
 
 local function extractIconId(t)
+    if type(t) == "number" and t > 100000 then return tostring(t) end
+    if type(t) == "string" then
+        local id = t:match("%d+")
+        if id and #id >= 6 then return id end
+        return nil
+    end
     if type(t) ~= "table" then return nil end
-    for _, k in ipairs({ "Icon", "Image", "Thumbnail", "ImageId", "IconId", "Decal", "Texture" }) do
+    for _, k in ipairs({ "Icon", "Image", "Thumbnail", "ImageId", "IconId", "Decal", "Texture", "AssetId", "MeshId" }) do
         local v = t[k]
         if v ~= nil and type(v) ~= "table" then
             local id = tostring(v):match("%d+")
@@ -292,45 +362,122 @@ local function extractIconId(t)
 end
 
 local function rarityToString(r)
-    if type(r) == "table" then return r.DisplayName or r.Title or r.Name end
-    if type(r) == "string" then return r end
+    if typeof and typeof(r) == "Instance" then
+        return r.Name
+    end
+    if type(r) == "userdata" then
+        local ok, n = pcall(function() return r.Name end)
+        if ok and n then return n end
+    end
+    if type(r) == "table" then
+        return r.DisplayName or r.Title or r.Name or r.Id or r.RarityName
+    end
+    if type(r) == "string" then
+        return r
+    end
     return nil
 end
 
 local function buildAssetLookup()
     if AssetLookupCache then return AssetLookupCache end
     local map = {}
+
+    local function registerAsset(keyName, data)
+        if type(data) ~= "table" then return end
+        local egg = (type(data.Egg) == "table" and data.Egg) or nil
+        local petRarity = rarityToString(data.Rarity) or (egg and rarityToString(egg.Rarity))
+        local petIcon = extractIconId(data)
+        local rawRate = data.EarnRate or data.BaseRate or data.IncomeRate or data.Rate or data.Income or data.BaseIncome
+        local petRate = tonumber(rawRate)
+
+        local petInfo = { rarity = petRarity, icon = petIcon, rate = petRate }
+        local eggInfo = {
+            rarity = (egg and rarityToString(egg.Rarity)) or petRarity,
+            icon = (egg and extractIconId(egg)) or petIcon
+        }
+
+        local names = { tostring(keyName), data.DisplayName, data.Name, data.Title }
+        for _, n in ipairs(names) do
+            if type(n) == "string" and n ~= "" then
+                local low = n:lower():gsub("^%s+", ""):gsub("%s+$", "")
+                map["pet:" .. low] = map["pet:" .. low] or petInfo
+                local eggKey = low:find("egg$") and low or (low .. " egg")
+                map["egg:" .. eggKey] = map["egg:" .. eggKey] or eggInfo
+            end
+        end
+
+        if egg then
+            local en = egg.Name or egg.DisplayName or egg.Title
+            if type(en) == "string" and en ~= "" then
+                local el = en:lower():gsub("^%s+", ""):gsub("%s+$", "")
+                if not el:find("egg") then el = el .. " egg" end
+                map["egg:" .. el] = eggInfo
+            end
+        end
+    end
+
+    -- 1. Scan semua konfigurasi resmi di ReplicatedStorage.Data.Assets.Configs
     pcall(function()
-        local Assets = require(ReplicatedStorage.Data.Assets)
-        for key, data in pairs(Assets.Directory or {}) do
-            if type(data) == "table" then
-                local egg = type(data.Egg) == "table" and data.Egg or nil
-                local petRarity = rarityToString(data.Rarity) or (egg and rarityToString(egg.Rarity))
-                local petIcon = extractIconId(data)
-                local petInfo = { rarity = petRarity, icon = petIcon, rate = tonumber(data.EarnRate) }
-                local eggInfo = {
-                    rarity = (egg and rarityToString(egg.Rarity)) or petRarity,
-                    icon = (egg and extractIconId(egg)) or petIcon
-                }
-                for _, n in ipairs({ tostring(key), data.DisplayName, data.Name }) do
-                    if type(n) == "string" and n ~= "" then
-                        local low = n:lower()
-                        map["pet:" .. low] = map["pet:" .. low] or petInfo
-                        local eggKey = low:find("egg$") and low or (low .. " egg")
-                        map["egg:" .. eggKey] = map["egg:" .. eggKey] or eggInfo
-                    end
-                end
-                if egg then
-                    local en = egg.Name or egg.DisplayName or egg.Title
-                    if type(en) == "string" and en ~= "" then
-                        local el = en:lower()
-                        if not el:find("egg") then el = el .. " egg" end
-                        map["egg:" .. el] = eggInfo
+        local dataFolder = ReplicatedStorage:FindFirstChild("Data")
+        local assetsFolder = dataFolder and dataFolder:FindFirstChild("Assets")
+        local configsFolder = assetsFolder and assetsFolder:FindFirstChild("Configs")
+        if configsFolder then
+            for _, child in ipairs(configsFolder:GetChildren()) do
+                if child:IsA("ModuleScript") then
+                    local ok, cfg = pcall(require, child)
+                    if ok and type(cfg) == "table" then
+                        registerAsset(child.Name, cfg)
                     end
                 end
             end
         end
     end)
+
+    -- 2. Scan modul induk Data.Assets jika memiliki table Directory / Configs
+    pcall(function()
+        local Assets = require(ReplicatedStorage.Data.Assets)
+        if type(Assets) == "table" then
+            local dir = Assets.Directory or Assets.Configs or Assets.All or Assets
+            for key, data in pairs(dir) do
+                registerAsset(key, data)
+            end
+        end
+    end)
+
+    -- 3. Scan ReplicatedStorage.Data.Areas.Configs untuk telur area
+    pcall(function()
+        local dataFolder = ReplicatedStorage:FindFirstChild("Data")
+        local areasFolder = dataFolder and dataFolder:FindFirstChild("Areas")
+        local configsFolder = areasFolder and areasFolder:FindFirstChild("Configs")
+        if configsFolder then
+            for _, child in ipairs(configsFolder:GetChildren()) do
+                if child:IsA("ModuleScript") then
+                    local ok, areaCfg = pcall(require, child)
+                    if ok and type(areaCfg) == "table" then
+                        for _, field in ipairs({ "Eggs", "Egg", "DropTable", "Drops", "Assets" }) do
+                            local tbl = areaCfg[field]
+                            if type(tbl) == "table" then
+                                for k, eggEntry in pairs(tbl) do
+                                    if type(eggEntry) == "table" then
+                                        local eName = eggEntry.Name or eggEntry.DisplayName or tostring(k)
+                                        if type(eName) == "string" and eName ~= "" then
+                                            local el = eName:lower():gsub("^%s+", ""):gsub("%s+$", "")
+                                            if not el:find("egg") then el = el .. " egg" end
+                                            map["egg:" .. el] = map["egg:" .. el] or {
+                                                rarity = rarityToString(eggEntry.Rarity),
+                                                icon = extractIconId(eggEntry)
+                                            }
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end)
+
     if next(map) then AssetLookupCache = map end
     return map
 end
@@ -364,7 +511,7 @@ local function getPlayerCurrencies()
         data.ping = pingNum and (math.floor(tonumber(pingNum)) .. " ms") or "N/A"
     end)
 
-    -- ðŸ” PRIORITAS SPEED 1: Leaderstats (Nilai Paling Akurat & Konsisten, misal 187770000000 -> "187.77 B")
+    -- 🔍 PRIORITAS 1: Leaderstats (Nilai Paling Akurat Langsung dari Server)
     pcall(function()
         local ls = LocalPlayer:FindFirstChild("leaderstats")
         if ls then
@@ -372,10 +519,18 @@ local function getPlayerCurrencies()
             if spdVal and type(spdVal.Value) == "number" and spdVal.Value > 0 then
                 data.speed = FormatNumber(spdVal.Value)
             end
+            local mpsVal = ls:FindFirstChild("Money/s") or ls:FindFirstChild("Cash/s") or ls:FindFirstChild("Income")
+            if mpsVal and type(mpsVal.Value) == "number" and mpsVal.Value > 0 then
+                data.moneyPerSecond = "+$" .. FormatNumber(mpsVal.Value) .. "/s"
+            end
+            local mVal = ls:FindFirstChild("Money") or ls:FindFirstChild("Cash") or ls:FindFirstChild("Coins")
+            if mVal and type(mVal.Value) == "number" and mVal.Value > 0 then
+                data.money = "$" .. FormatNumber(mVal.Value)
+            end
         end
     end)
 
-    -- ðŸ” PRIORITAS MONEY & SPEED UI (HUD Pojok Kiri Bawah: "$50.2Qa" / "$50Qa" & "187.7B")
+    -- 🔍 PRIORITAS 2: MONEY & SPEED UI (HUD Pojok Kiri Bawah: "$50.2Qa" / "$50Qa" & "187.7B")
     pcall(function()
         local pg = LocalPlayer:FindFirstChild("PlayerGui")
         if not pg then return end
@@ -391,8 +546,8 @@ local function getPlayerCurrencies()
                     local pName = desc.Parent and desc.Parent.Name:lower() or ""
                     local dName = desc.Name:lower()
 
-                    -- Deteksi Money/s HUD (misal "+$4.7Qa/s", "$4.7Qa/s", "4.7Qa/s")
-                    if txt:find("/s") and not txt:lower():find("boost") and not txt:lower():find("speed") and not txt:lower():find("step") then
+                    -- Deteksi Money/s HUD jika belum terbaca dari leaderstats
+                    if data.moneyPerSecond == "N/A" and txt:find("/s") and not txt:lower():find("boost") and not txt:lower():find("speed") and not txt:lower():find("step") then
                         local mpsMatch = txt:match("[%+%$]?%s*([%d%,%.]+%s*[A-Za-z]*)%s*/%s*s")
                         if mpsMatch and mpsMatch ~= "" then
                             data.moneyPerSecond = "+$" .. mpsMatch:gsub("%s+", "") .. "/s"
@@ -576,22 +731,37 @@ local function getInventorySummary()
 
                     -- 4. Deteksi kartu telur di grid Backpack, misal "Titan Temple Egg (65.225Ka)" atau "Cosmic Egg"
                     if txt:find("Egg") and not txt:find(":") and not txt:find("All Items") then
-                        local cleanEgg = txt:gsub("%b()", ""):gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", "")
-                        local eggMatch = cleanEgg:match("([%a%s]+Egg)")
-                        if eggMatch and isRealEggName(eggMatch) then
-                            uiEggsInBackpack[eggMatch] = (uiEggsInBackpack[eggMatch] or 0) + 1
-                            if not uiEggIcons[eggMatch] and desc.Parent then
-                                pcall(function()
-                                    for _, sib in ipairs(desc.Parent:GetDescendants()) do
-                                        if (sib:IsA("ImageLabel") or sib:IsA("ImageButton")) and sib.Image ~= "" then
-                                            local id = tostring(sib.Image):match("%d+")
-                                            if id and #id >= 6 then
-                                                uiEggIcons[eggMatch] = id
-                                                break
+                        -- Pastikan elemen BUKAN dari mesin incubator, scramble, altar, fusing, atau popup event
+                        local inMachine = false
+                        local cur = desc
+                        while cur and cur ~= pg do
+                            local cn = cur.Name:lower()
+                            if cn:find("incubator") or cn:find("scramble") or cn:find("growingegg") or cn:find("eggmachine") 
+                                or cn:find("altar") or cn:find("machine") or cn:find("fuse") or cn:find("crate") or cn:find("spin") then
+                                inMachine = true
+                                break
+                            end
+                            cur = cur.Parent
+                        end
+
+                        if not inMachine then
+                            local cleanEgg = txt:gsub("%b()", ""):gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", "")
+                            local eggMatch = cleanEgg:match("([%a%s]+Egg)")
+                            if eggMatch and isRealEggName(eggMatch) then
+                                uiEggsInBackpack[eggMatch] = (uiEggsInBackpack[eggMatch] or 0) + 1
+                                if not uiEggIcons[eggMatch] and desc.Parent then
+                                    pcall(function()
+                                        for _, sib in ipairs(desc.Parent:GetDescendants()) do
+                                            if (sib:IsA("ImageLabel") or sib:IsA("ImageButton")) and sib.Image ~= "" then
+                                                local id = tostring(sib.Image):match("%d+")
+                                                if id and #id >= 6 then
+                                                    uiEggIcons[eggMatch] = id
+                                                    break
+                                                end
                                             end
                                         end
-                                    end
-                                end)
+                                    end)
+                                end
                             end
                         end
                     end
@@ -867,9 +1037,20 @@ local function getInventorySummary()
         end
     end
 
+    local finalEggTotal = 0
+    for _, cnt in pairs(summary.eggsInBackpack) do finalEggTotal = finalEggTotal + cnt end
+    if summary.eggBackpackCount == 0 and finalEggTotal > 0 then
+        summary.eggBackpackCount = finalEggTotal
+    end
+
     -- 3. Sync Pet di Backpack
     if uiPetCount > 0 then
         summary.petBackpackCount = uiPetCount
+    end
+    local finalPetBpTotal = 0
+    for _, cnt in pairs(summary.petsInBackpack) do finalPetBpTotal = finalPetBpTotal + cnt end
+    if summary.petBackpackCount == 0 and finalPetBpTotal > 0 then
+        summary.petBackpackCount = finalPetBpTotal
     end
 
     -- 4. Lengkapi rarity & icon dari Data.Assets berdasarkan nama (tetap jalan walau sData gagal)
@@ -904,20 +1085,47 @@ local function getInventorySummary()
         if info then summary.bestPet.icon = info.icon end
     end
 
-    -- 5. Fallback Best Pet jika sData.Inventory belum terisi
+    -- Skala prioritas Rarity
+    local RarityScore = {
+        BrainrotGod = 100,
+        Divine = 90,
+        Eternal = 80,
+        Secret = 70,
+        Cosmic = 60,
+        Mythic = 50,
+        Legendary = 40,
+        Epic = 30,
+        Rare = 20,
+        Uncommon = 10,
+        Common = 0
+    }
+
+    -- 5. Fallback Best Pet jika sData.Inventory belum terisi atau mencari pet tertinggi
     if not summary.bestPet then
+        local bestCandidate = nil
+        local bestScore = -1
+        local bestRate = -1
+
         for cat, meta in pairs(summary.petMeta) do
             local r = (meta and meta.rarity) or "Common"
+            local score = RarityScore[r] or 0
             local rate = (meta and tonumber(meta.rate)) or 0
             if rate == 0 then
-                pcall(function()
-                    local Assets = require(ReplicatedStorage.Data.Assets)
-                    local pData = Assets and Assets.Directory and Assets.Directory[cat]
-                    if pData and pData.EarnRate then rate = pData.EarnRate end
-                end)
+                local info = lookupAsset("pet", cat)
+                if info and info.rate then rate = tonumber(info.rate) or 0 end
             end
-            if not summary.bestPet or rate > (summary.bestPet.rawRate or 0) then
-                summary.bestPet = {
+
+            local isBetter = false
+            if rate > bestRate then
+                isBetter = true
+            elseif rate == bestRate and score > bestScore then
+                isBetter = true
+            end
+
+            if isBetter then
+                bestRate = rate
+                bestScore = score
+                bestCandidate = {
                     name = cat,
                     rarity = r,
                     earnRate = rate > 0 and ("$" .. FormatNumber(rate) .. "/s") or "$0/s",
@@ -927,7 +1135,25 @@ local function getInventorySummary()
                 }
             end
         end
+        summary.bestPet = bestCandidate
     end
+
+    -- 6. Jika Best Pet memiliki rate $0/s, estimasi dari leaderstats Money/s
+    pcall(function()
+        local ls = LocalPlayer:FindFirstChild("leaderstats")
+        local lsMps = ls and ls:FindFirstChild("Money/s")
+        if lsMps and type(lsMps.Value) == "number" and lsMps.Value > 0 then
+            if summary.totalKandangEarnRate == 0 then
+                summary.totalKandangEarnRate = lsMps.Value
+            end
+            if summary.bestPet and (summary.bestPet.rawRate == 0 or summary.bestPet.earnRate == "$0/s") then
+                local actCount = math.clamp(summary.petKandangCount or 1, 1, 19)
+                local est = math.floor(lsMps.Value / actCount)
+                summary.bestPet.earnRate = "~$" .. FormatNumber(est) .. "/s"
+                summary.bestPet.rawRate = est
+            end
+        end
+    end)
 
     -- Bersihkan field internal sebelum dikirim
     for _, meta in pairs(summary.petMeta) do meta.rate = nil end
@@ -1381,9 +1607,10 @@ local function sendPeriodicStatusReport()
             color = 3447003,
             fields = embedFields,
             thumbnail = {
-                url = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. LocalPlayer.UserId .. "&width=150&height=150&format=png"
+                url = (inv.bestPet and inv.bestPet.icon and ("https://assetdelivery.roblox.com/v1/asset/?id=" .. inv.bestPet.icon))
+                    or ("https://www.roblox.com/headshot-thumbnail/image?userId=" .. LocalPlayer.UserId .. "&width=150&height=150&format=png")
             },
-            footer = { text = "P4kong x SysHub Monitor â€¢ Auto Report" },
+            footer = { text = "P4kong x SysHub Monitor • Auto Report" },
             timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
         }}
     }
@@ -1409,15 +1636,24 @@ local function sendEggStealEvent(cat, rec)
     local rarityName = "Unknown"
     local displayName = cat
     local earnRate = 0
+    local eggIcon = nil
+
+    local info = lookupAsset("egg", cat) or lookupAsset("pet", cat)
+    if info then
+        if info.rarity then rarityName = info.rarity end
+        if info.rate and info.rate > 0 then earnRate = info.rate end
+        if info.icon then eggIcon = info.icon end
+    end
 
     pcall(function()
         local Assets = require(ReplicatedStorage.Data.Assets)
         if Assets and Assets.Directory and Assets.Directory[cat] then
             local pData = Assets.Directory[cat]
-            local r = pData.Rarity or (pData.Egg and pData.Egg.Rarity) or "Unknown"
-            rarityName = type(r) == "table" and (r.Title or r.Name or "Unknown") or tostring(r)
+            local r = pData.Rarity or (pData.Egg and pData.Egg.Rarity) or rarityName
+            rarityName = rarityToString(r) or rarityName
             displayName = pData.DisplayName or pData.Name or cat
-            earnRate = pData.EarnRate or 0
+            if earnRate == 0 and pData.EarnRate then earnRate = pData.EarnRate end
+            if not eggIcon then eggIcon = extractIconId(pData) end
         end
     end)
 
@@ -1437,6 +1673,7 @@ local function sendEggStealEvent(cat, rec)
                     userId = LocalPlayer.UserId,
                     eggName = displayName,
                     rarity = rarityName,
+                    icon = eggIcon,
                     earnRate = FormatNumber(earnRate),
                     scale = formattedScale,
                     mutations = mutationsStr,
@@ -1461,6 +1698,9 @@ local function sendEggStealEvent(cat, rec)
     local ping = Config.WebhookPingID
     local mentionStr = (ping and ping ~= "") and ("<@" .. ping .. ">") or nil
 
+    local thumbUrl = eggIcon and ("https://assetdelivery.roblox.com/v1/asset/?id=" .. eggIcon)
+        or ("https://www.roblox.com/headshot-thumbnail/image?userId=" .. LocalPlayer.UserId .. "&width=150&height=150&format=png")
+
     local payload = {
         content = mentionStr,
         embeds = {{
@@ -1468,17 +1708,18 @@ local function sendEggStealEvent(cat, rec)
                 name = "Steal An Egg Tracker",
                 icon_url = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. LocalPlayer.UserId .. "&width=150&height=150&format=png"
             },
-            title = "ðŸ•µï¸ Telur Berhasil Dicuri ke Backpack!",
+            title = "🕵️ Telur Berhasil Dicuri ke Backpack!",
             color = colorDecimal,
+            thumbnail = { url = thumbUrl },
             fields = {
-                { name = "ðŸ‘¤ Player", value = "```" .. LocalPlayer.Name .. "```", inline = false },
-                { name = "ðŸ¾ Spesies", value = "```" .. displayName .. "```", inline = true },
-                { name = "ðŸ’Ž Rarity", value = "```" .. rarityName .. "```", inline = true },
-                { name = "ðŸ’¸ Earn Rate", value = "```$" .. FormatNumber(earnRate) .. "/s```", inline = true },
-                { name = "ðŸ“Š Multiplier Scale", value = "```" .. formattedScale .. "x```", inline = true },
-                { name = "ðŸ§¬ Mutasi", value = "```" .. mutationsStr .. "```", inline = true }
+                { name = "👤 Player", value = "```" .. LocalPlayer.Name .. "```", inline = false },
+                { name = "🐾 Spesies", value = "```" .. displayName .. "```", inline = true },
+                { name = "💎 Rarity", value = "```" .. rarityName .. "```", inline = true },
+                { name = "💸 Earn Rate", value = "```$" .. FormatNumber(earnRate) .. "/s```", inline = true },
+                { name = "📊 Multiplier Scale", value = "```" .. formattedScale .. "x```", inline = true },
+                { name = "🧬 Mutasi", value = "```" .. mutationsStr .. "```", inline = true }
             },
-            footer = { text = "Monitoring â€¢ Event Egg Didapat" },
+            footer = { text = "Monitoring • Event Egg Didapat" },
             timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
         }}
     }
